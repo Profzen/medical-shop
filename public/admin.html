@@ -1,0 +1,1098 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <title>Admin • MedicalShop — Dashboard</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <style>
+    /* =========================
+       ADMIN DASHBOARD - RESPONSIVE (CSS ajusté)
+       ========================= */
+    :root{
+      --bg-1:#061025; --bg-2:#07182a; --panel:#0f172a;
+      --accent:#1f6feb; --accent-2:#22c55e; --muted:#94a3b8; --white:#e6eef8;
+      --glass: rgba(255,255,255,0.03);
+      --card-shadow: 0 12px 35px rgba(2,6,23,0.5);
+      --radius:12px;
+      --max-width:1260px;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%; overflow-x:hidden}
+    body{
+      margin:0; font-family:Inter,system-ui,Roboto,Arial; color:var(--white);
+      background: linear-gradient(180deg,var(--bg-1),var(--bg-2)); -webkit-font-smoothing:antialiased;
+      -webkit-font-feature-settings: "kern";
+    }
+
+    /* TOPBAR */
+    header.topbar{
+      position:sticky; top:0; z-index:120; display:flex; align-items:center; gap:18px;
+      padding:12px 16px; background:linear-gradient(90deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+      border-bottom:1px solid rgba(255,255,255,0.03);
+      backdrop-filter: blur(6px);
+    }
+    .brand { display:flex; align-items:center; gap:12px; font-weight:800; font-size:18px; min-width:0 }
+    .mark { width:44px; height:44px; border-radius:10px; display:grid; place-items:center;
+            background: linear-gradient(135deg,var(--accent),var(--accent-2)); font-weight:900; color:white; flex-shrink:0 }
+    nav.main-nav{ margin-left:18px; display:flex; gap:12px; align-items:center; flex-wrap:wrap; }
+    nav.main-nav a{ color:var(--muted); text-decoration:none; padding:8px 10px; border-radius:8px; font-weight:600; white-space:nowrap }
+    nav.main-nav a:hover{ color:var(--white); background:var(--glass) }
+
+    .tools { margin-left:auto; display:flex; align-items:center; gap:12px; min-width:0 }
+    .tools .small { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:220px; }
+
+    /* burger button for mobile */
+    .burger { display:none; background:transparent; border:0; color:var(--white); font-size:20px; width:44px; height:44px; border-radius:8px; align-items:center; justify-content:center; cursor:pointer; }
+    .burger .lines { width:20px; height:2px; background:var(--white); position:relative; display:inline-block; }
+    .burger .lines::before, .burger .lines::after { content:""; position:absolute; left:0; right:0; height:2px; background:var(--white); }
+    .burger .lines::before { top:-6px }
+    .burger .lines::after { bottom:-6px }
+
+    .container{ max-width:var(--max-width); margin:16px auto; padding:0 16px 64px; }
+    h1{ margin:6px 0 0 0; font-size:20px }
+    p.lead{ margin:6px 0 16px 0; color:var(--muted) }
+
+    /* GRID LAYOUT */
+    .grid{ display:grid; grid-template-columns: 1.4fr 320px; gap:18px; align-items:start; }
+    @media (max-width:1100px){ .grid{ grid-template-columns:1fr } }
+
+    .panel{ background:linear-gradient(180deg,var(--panel), #071428); border-radius:var(--radius);
+            padding:16px; border:1px solid rgba(255,255,255,0.04); box-shadow:var(--card-shadow); }
+
+    /* SUMMARY CARDS */
+    .summary { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-bottom:10px; }
+    @media (max-width:700px){ .summary{ grid-template-columns:repeat(2,1fr) } }
+    @media (max-width:420px){ .summary{ grid-template-columns:1fr } }
+    .card { padding:14px; border-radius:10px; background:linear-gradient(180deg, rgba(255,255,255,0.012), transparent); border:1px solid rgba(255,255,255,0.02); }
+    .card h3{ margin:0; font-size:13px; color:var(--muted) }
+    .card .big{ font-size:20px; font-weight:800; margin-top:6px }
+
+    .searchbar { display:flex; gap:12px; align-items:center; margin-bottom:12px; flex-wrap:wrap; }
+    .searchbar input[type="search"]{ flex:1; padding:10px 12px; border-radius:10px; border:1px solid rgba(255,255,255,0.04);
+      background:rgba(255,255,255,0.02); color:var(--white); min-width:160px }
+    .btn { background:linear-gradient(135deg,var(--accent),#3ea1ff); border:0; color:white; padding:10px 14px; border-radius:10px; font-weight:700; cursor:pointer }
+    .btn.ghost { background:transparent; border:1px solid rgba(255,255,255,0.06); color:var(--muted) }
+    .small { font-size:13px; color:var(--muted) }
+
+    /* PRODUCTS PREVIEW */
+    .products-preview { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; }
+    @media (max-width:1400px){ .products-preview { grid-template-columns:repeat(3,1fr) } }
+    @media (max-width:900px){ .products-preview { grid-template-columns:repeat(2,1fr) } }
+    @media (max-width:520px){ .products-preview { grid-template-columns:1fr } }
+    .p-card { border-radius:10px; overflow:hidden; display:flex; flex-direction:column; background:linear-gradient(180deg,#071428,#071528); border:1px solid rgba(255,255,255,0.03) }
+    .p-thumb { height:120px; border-radius:6px 6px 0 0; min-height:80px; overflow:hidden; display:flex; align-items:center; justify-content:center; background:#081025 }
+
+    .p-info{ padding:10px; display:flex; flex-direction:column; gap:6px; flex:1 }
+    .p-actions{ display:flex; gap:8px; margin-top:auto; flex-wrap:wrap }
+
+    /* Universal responsive images (important) */
+    .p-thumb, .preview-small, .vp-thumb, .imgwrap, .preview-small .imgwrap {
+      width:100%; height:100%; display:flex; align-items:center; justify-content:center; overflow:hidden; background:#0b1220;
+    }
+    .responsive-img {
+      display:block; margin:auto; max-width:100%; max-height:100%; width:auto; height:auto; object-fit:contain;
+    }
+    .p-thumb img.responsive-img,
+    .preview-small img.responsive-img,
+    .vp-thumb img.responsive-img,
+    .order-item .responsive-img,
+    .p-card img.responsive-img,
+    .imgwrap img.responsive-img {
+      object-fit:contain !important;
+      max-width:100% !important;
+      max-height:100% !important;
+      width:auto !important;
+      height:auto !important;
+      display:block !important;
+      margin:auto !important;
+    }
+
+    /* ORDERS LIST */
+    .orders-list{ display:flex; flex-direction:column; gap:12px; max-height:72vh; overflow:auto; padding-right:6px; }
+    .order-item{ padding:12px; border-radius:10px; background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.03); display:flex; gap:12px; align-items:flex-start; flex-wrap:wrap; }
+    .order-left{ min-width:160px; max-width:260px; flex:0 1 220px; }
+    .order-right{ flex:1; display:flex; flex-direction:column; gap:8px; min-width:220px; }
+    .order-meta{ display:flex; justify-content:space-between; gap:8px; align-items:center }
+    .status { padding:6px 8px; border-radius:999px; font-weight:700; font-size:12px; display:inline-block }
+
+    .status.pending{ background:rgba(255,255,255,0.03); color:var(--muted) }
+    .status.confirmed{ background:linear-gradient(135deg,#18c38b,#10b981); color:white }
+    .status.rejected{ background:linear-gradient(135deg,#ff6b6b,#ff8a5c); color:white }
+
+    .order-items{ display:flex; gap:8px; flex-wrap:wrap; }
+    .order-item-chip{ padding:6px 8px; border-radius:8px; background:rgba(255,255,255,0.02); font-size:13px; display:flex; align-items:center; gap:6px; }
+
+    /* RIGHT PANELS */
+    .panel-right { margin-bottom:12px }
+
+    /* MODALS - backdrop and modal body */
+    .modal-backdrop{ position:fixed; inset:0; display:none; place-items:center; background:rgba(0,0,0,0.6); z-index:200; overflow:auto; padding:20px; }
+    .modal{ width:100%; max-width:920px; margin:12px auto; }
+    .modal.panel{ padding:18px; border-radius:12px; }
+
+    /* ORDER DETAIL GRID (stack on small screens) */
+    .order-detail-grid{ display:grid; grid-template-columns: 1fr 320px; gap:12px; }
+    @media (max-width:1100px){ .order-detail-grid{ grid-template-columns:1fr; } }
+    .detail-left{ padding:8px }
+    .detail-right{ padding:8px; border-left:1px solid rgba(255,255,255,0.03) }
+    @media (max-width:1100px){ .detail-right{ border-left:0; border-top:1px solid rgba(255,255,255,0.03); padding-top:12px } }
+
+    /* EDIT/CREATE MODAL: force vertical stacking on narrow screens */
+    #modal .panel { max-width:920px; }
+    #modal .panel form { display:flex; gap:12px; align-items:flex-start; flex-wrap:wrap; }
+    #modal .panel form > div[style], #modal .panel form > div { box-sizing:border-box; }
+    @media (max-width:900px){
+      #modal .panel form{ flex-direction:column; }
+      #modal .panel form > div[style] { width:100% !important; }
+      #modal .panel form input, #modal .panel form textarea, #modal .panel form select { width:100% !important; }
+      .preview-small { width:100%; height:160px; min-width:auto; min-height:120px; }
+    }
+
+    /* small-screen tweaks */
+    @media (max-width:780px){
+      .burger { display:flex; margin-right:8px }
+      nav.main-nav { display:none } /* toggled by burger */
+      header.topbar.nav-open nav.main-nav{
+        display:flex;
+        position:absolute;
+        left:12px;
+        right:12px;
+        top:64px;
+        background:linear-gradient(180deg,var(--panel), #071428);
+        padding:10px;
+        border-radius:10px;
+        flex-direction:column;
+        gap:8px;
+        box-shadow:0 10px 30px rgba(2,6,23,0.3);
+      }
+      .brand { gap:8px }
+      .mark { width:40px; height:40px }
+      .container{ padding:0 12px 48px; margin-top:8px }
+      .orders-list{ max-height:54vh }
+      .products-preview { grid-template-columns:repeat(2,1fr) }
+      .summary{ grid-template-columns:repeat(2,1fr) }
+    }
+
+    @media (max-width:520px){
+      .brand { font-size:16px }
+      .tools .small { max-width:120px }
+      .hero-like { padding:8px 12px }
+      .p-thumb { height:100px }
+      .orders-list{ max-height:48vh }
+    }
+
+    /* little polish */
+    footer { margin-top:28px; color:var(--muted); text-align:center; font-size:13px; padding-bottom:28px; }
+    .diag { margin-top:8px; color:#ffb86b; font-size:13px }
+    .muted { color:var(--muted) }
+
+    /* toast */
+    .toast {
+      position:fixed; right:18px; bottom:24px; background:rgba(0,0,0,0.8); color:white; padding:10px 14px; border-radius:10px; z-index:999;
+      box-shadow:0 8px 30px rgba(0,0,0,0.4);
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar" role="banner">
+    <!-- burger for mobile -->
+    <button id="burgerBtn" class="burger" aria-label="Menu">
+      <span class="lines" aria-hidden="true"></span>
+    </button>
+
+    <div class="brand" role="img" aria-label="MedicalShop Admin">
+      <div class="mark">M+</div>
+      <div style="min-width:0">
+        <div style="font-weight:800; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:200px">MedicalShop</div>
+        <div style="font-size:12px; color:var(--muted); margin-top:2px">Admin</div>
+      </div>
+    </div>
+
+    <nav class="main-nav" aria-label="navigation admin">
+      <a id="link-dashboard" href="admin.html">Dashboard</a>
+      <a id="link-products-admin" href="products_admin.html">Produits (admin)</a>
+      <a id="link-historique" href="historique.html">Historique</a>
+      <a id="link-client" href="index.html">Voir site public</a>
+    </nav>
+
+    <div class="tools" role="status" aria-live="polite">
+      <div id="whoami" class="small">Non connecté</div>
+      <button id="btn-logout" class="btn ghost" style="display:none">Se déconnecter</button>
+    </div>
+  </header>
+
+  <main class="container" role="main">
+    <h1>Tableau de bord</h1>
+    <p class="lead">Statistiques rapides — actions sur produits & commandes</p>
+
+    <div class="grid" role="region" aria-label="Contenu principal">
+      <div>
+        <div class="panel" aria-hidden="false">
+          <div class="summary" aria-hidden>
+            <div class="card">
+              <h3>Produits actifs</h3>
+              <div id="countProducts" class="big">—</div>
+              <div class="small">Total des produits visibles</div>
+            </div>
+            <div class="card">
+              <h3>Commandes en attente</h3>
+              <div id="countPending" class="big">—</div>
+              <div class="small">Commandes à traiter</div>
+            </div>
+            <div class="card">
+              <h3>Ventes (30j)</h3>
+              <div id="sales30" class="big">—</div>
+              <div class="small">Quantité vendue (approx.)</div>
+            </div>
+          </div>
+
+          <hr style="border:none; border-top:1px solid rgba(255,255,255,0.04); margin:12px 0">
+
+          <div class="searchbar" role="search">
+            <input id="quickSearch" type="search" placeholder="Recherche rapide produit par titre / SKU..." aria-label="Recherche produit rapide" />
+            <button id="btn-search" class="btn">Rechercher</button>
+            <button id="btn-new" class="btn ghost">Créer un produit</button>
+            <button id="btn-go-products" class="btn ghost">Gérer tous les produits</button>
+          </div>
+
+          <div style="margin-top:10px; margin-bottom:8px" class="small muted">Commandes récentes — actions rapides</div>
+
+          <div class="panel" style="margin-top:10px">
+            <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap">
+              <h3 style="margin:0">Commandes récentes</h3>
+              <div style="display:flex; gap:8px; align-items:center">
+                <button id="btn-refresh-orders" class="btn ghost">Rafraîchir</button>
+                <a href="historique.html" class="btn ghost" style="margin-left:8px">Voir plus</a>
+              </div>
+            </div>
+            <div id="orders" class="orders-list" style="margin-top:12px" aria-live="polite">
+              <!-- commandes injectées -->
+            </div>
+            <div id="ordersDiag" class="diag" aria-live="polite"></div>
+          </div>
+        </div>
+
+        <div class="panel" style="margin-top:12px">
+          <h3>Résultats rapides</h3>
+          <div id="quickResults" class="products-preview" style="margin-top:10px"></div>
+        </div>
+      </div>
+
+      <aside>
+        <div class="panel panel-right">
+          <h3>Top produits (30 jours)</h3>
+          <div id="topProducts" style="display:grid; gap:10px; margin-top:10px"></div>
+        </div>
+
+        <div class="panel panel-right" style="margin-top:12px">
+          <h3>Actions rapides</h3>
+          <div style="display:flex; gap:8px; flex-direction:column; margin-top:8px">
+            <button id="btn-open-products-admin" class="btn ghost">Ouvrir produits admin</button>
+            <button id="btn-logout-2" class="btn ghost">Se déconnecter</button>
+          </div>
+        </div>
+      </aside>
+    </div>
+
+    <footer>
+      © <span id="year"></span> MedicalShop — Back-office MVP
+    </footer>
+  </main>
+
+  <!-- EDIT / CREATE MODAL (condensed, vertical on mobile) -->
+  <div id="modal" class="modal-backdrop" aria-hidden="true" style="display:none;">
+    <div class="modal panel" role="dialog" aria-modal="true" aria-labelledby="modalTitle" tabindex="-1">
+      <h3 id="modalTitle">Modifier produit</h3>
+      <form id="editForm" autocomplete="off" style="margin-top:8px">
+        <input type="hidden" id="editId" />
+        <div style="display:flex; gap:12px; align-items:flex-start; flex-wrap:wrap;">
+          <div style="flex:1; min-width:220px;">
+            <div class="field"><label class="small">Titre</label><input id="editTitle" type="text" required style="width:100%; padding:10px; border-radius:8px; border:1px solid rgba(255,255,255,0.04); background:transparent; color:var(--white)"></div>
+            <div class="field" style="margin-top:8px"><label class="small">Prix (XOF)</label><input id="editPrice" type="number" min="0" style="width:100%; padding:10px; border-radius:8px;"></div>
+            <div class="field" style="margin-top:8px"><label class="small">Stock</label><input id="editStock" type="number" min="0" style="width:100%; padding:10px; border-radius:8px;"></div>
+            <div class="field" style="margin-top:8px"><label class="small">Catégorie</label><select id="editCategory" style="width:100%; padding:10px; border-radius:8px"></select></div>
+            <div class="field" style="margin-top:8px"><label class="small">Description courte</label><textarea id="editShort" style="width:100%; padding:10px; border-radius:8px; min-height:88px;"></textarea></div>
+
+            <div style="margin-top:12px; display:flex; gap:8px; flex-wrap:wrap;">
+              <button id="saveEdit" class="btn" type="submit">Enregistrer</button>
+              <button id="cancelEdit" class="btn ghost" type="button">Annuler</button>
+            </div>
+            <div id="editMsg" class="small muted" style="margin-top:8px"></div>
+          </div>
+
+          <div style="width:160px; min-width:160px">
+            <div class="small muted">Image</div>
+            <div class="preview-small" id="editPreview" style="margin-top:8px; display:flex; align-items:center; justify-content:center; border-radius:8px; overflow:hidden;">
+              <div class="imgwrap"><span class="small muted">Aperçu</span></div>
+            </div>
+            <input id="editImage" type="file" accept="image/png,image/jpeg" style="margin-top:8px; width:100%" />
+            <div class="small muted" style="margin-top:8px">Max 3MB (redimensionné côté client)</div>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ORDER DETAIL MODAL -->
+  <div id="orderModal" class="modal-backdrop" aria-hidden="true">
+    <div class="modal panel" role="dialog" aria-modal="true" aria-labelledby="orderModalTitle" tabindex="-1">
+      <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:8px; flex-wrap:wrap">
+        <h3 id="orderModalTitle">Détails commande</h3>
+        <div>
+          <button id="orderModalClose" class="btn ghost">Fermer</button>
+        </div>
+      </div>
+
+      <div id="orderModalContent" class="order-detail-grid">
+        <div class="detail-left">
+          <div id="od_meta"></div>
+          <hr style="border:none;border-top:1px solid rgba(255,255,255,0.04);margin:12px 0">
+          <h4 style="margin:0 0 8px 0">Items</h4>
+          <div id="od_items" style="display:flex;flex-direction:column;gap:8px"></div>
+        </div>
+
+        <div class="detail-right">
+          <div id="od_shipping" class="small muted"></div>
+          <div style="margin-top:12px"><strong>Total:</strong> <span id="od_total"></span></div>
+          <div style="margin-top:12px; display:flex; gap:8px; align-items:center; flex-wrap:wrap">
+            <button id="od_validate" class="btn">Valider</button>
+            <button id="od_reject" class="btn ghost">Rejeter</button>
+          </div>
+        </div>
+      </div>
+      <div id="od_diag" class="diag"></div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+
+    // ---------- CONFIG (inchangé) ----------
+    const SUPABASE_URL = "https://vrzmowqzegmaymewmbij.supabase.co";
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZyem1vd3F6ZWdtYXltZXdtYmlqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTUzMDMwNzksImV4cCI6MjA3MDg3OTA3OX0.TmkdqXhkVgbfhAWVj-qLC9bDTL0-_YoGz-SgS81sNG0";
+    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    // DOM shortcuts - KEEPING ALL ORIGINAL IDS & LOGIC
+    const $ = s => document.querySelector(s);
+    const whoami = $("#whoami");
+    const btnLogout = $("#btn-logout");
+    const btnLogout2 = $("#btn-logout-2");
+    const btnNew = $("#btn-new");
+    const btnSearch = $("#btn-search");
+    const quickSearch = $("#quickSearch");
+    const quickResults = $("#quickResults");
+    const btnGoProducts = $("#btn-go-products");
+    const btnOpenProductsAdmin = $("#btn-open-products-admin");
+
+    const countProductsEl = $("#countProducts");
+    const countPendingEl = $("#countPending");
+    const sales30El = $("#sales30");
+    const topProductsEl = $("#topProducts");
+    const ordersEl = $("#orders");
+    const btnRefreshOrders = $("#btn-refresh-orders");
+    const yearEl = $("#year");
+    const ordersDiag = $("#ordersDiag");
+
+    // product edit modal elements
+    const modal = $("#modal");
+    const editForm = $("#editForm");
+    const editId = $("#editId");
+    const editTitle = $("#editTitle");
+    const editPrice = $("#editPrice");
+    const editStock = $("#editStock");
+    const editCategory = $("#editCategory");
+    const editShort = $("#editShort");
+    const editPreview = $("#editPreview");
+    const editImage = $("#editImage");
+    const cancelEdit = $("#cancelEdit");
+    const editMsg = $("#editMsg");
+
+    // order modal elements
+    const orderModal = $("#orderModal");
+    const orderModalClose = $("#orderModalClose");
+    const od_meta = $("#od_meta");
+    const od_items = $("#od_items");
+    const od_shipping = $("#od_shipping");
+    const od_total = $("#od_total");
+    const od_validate = $("#od_validate");
+    const od_reject = $("#od_reject");
+    const od_diag = $("#od_diag");
+
+    yearEl && (yearEl.textContent = new Date().getFullYear());
+
+    function escapeHtml(s=''){ return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+    // small visual toast
+    function flashToast(msg, duration = 2200){
+      const t = document.createElement('div'); t.className = 'toast'; t.textContent = msg;
+      document.body.appendChild(t);
+      setTimeout(()=> { t.style.opacity = '0.01'; }, duration - 300);
+      setTimeout(()=> t.remove(), duration);
+    }
+
+    // ----- Helper: compute public url from storage path -----
+    async function computePublicUrlFromPath(path){
+      if (!path) return null;
+      try {
+        const { data } = await supabase.storage.from('products').getPublicUrl(path);
+        return data?.publicUrl ?? null;
+      } catch(e){ console.warn('getPublicUrl err', e); return null; }
+    }
+
+    // ----- Update image_url in DB (try; if fails, ignore but log) -----
+    async function tryUpdateImageUrlInDb(productId, imageUrl, imagePath){
+      if (!productId || !imageUrl) return;
+      try {
+        const { error } = await supabase.from('products').update({ image_url: imageUrl, image_path: imagePath }).eq('id', productId);
+        if (error) {
+          console.warn('update image_url failed', error);
+        } else {
+          console.debug('image_url updated for', productId);
+        }
+      } catch (err) {
+        console.warn('tryUpdateImageUrlInDb err', err);
+      }
+    }
+
+    // ---------- Auth & admin check (logic preserved) ----------
+    async function ensureAdminOrRedirect(){
+      try {
+        const { data: userData } = await supabase.auth.getUser();
+        if (!userData?.user) return window.location.href = 'admin-login.html';
+        const currentUser = userData.user;
+        const { data, error } = await supabase.from('admins').select('user_id').eq('user_id', currentUser.id).limit(1);
+        if (error) { console.warn('admins check error', error); alert('Erreur vérification admin'); return window.location.href = 'admin-login.html'; }
+        if (!data || data.length === 0) { alert('Compte non admin — accès refusé'); await supabase.auth.signOut(); return window.location.href = 'admin-login.html'; }
+        whoami.textContent = currentUser.email || currentUser.id;
+        $("#btn-logout").style.display = "";
+        $("#btn-logout-2").style.display = "";
+        attachHandlers();
+        await refreshDashboard();
+      } catch (err) {
+        console.error('auth check err', err);
+        return window.location.href = 'admin-login.html';
+      }
+    }
+
+    // Keep logout handlers unchanged
+    $("#btn-logout").addEventListener('click', async ()=> { await supabase.auth.signOut(); window.location.href = 'admin-login.html'; });
+    $("#btn-logout-2").addEventListener('click', async ()=> { await supabase.auth.signOut(); window.location.href = 'admin-login.html'; });
+
+    function attachHandlers(){
+      btnSearch.addEventListener('click', onQuickSearch);
+      quickSearch.addEventListener('keydown', (e)=> { if (e.key==='Enter') onQuickSearch(); });
+      btnNew.addEventListener('click', () => openEditorForNew());
+      btnGoProducts.addEventListener('click', ()=> window.location.href = 'products_admin.html');
+      btnOpenProductsAdmin.addEventListener('click', ()=> window.location.href = 'products_admin.html');
+      btnRefreshOrders.addEventListener('click', ()=> loadOrdersRecent());
+      editForm.addEventListener('submit', onEditSubmit);
+      cancelEdit.addEventListener('click', (e)=> { e.preventDefault(); showModal(false); });
+
+      // order modal handlers
+      orderModalClose.addEventListener('click', ()=> { showOrderModal(false); });
+      od_validate.addEventListener('click', async ()=> {
+        const id = od_meta.dataset.orderId;
+        if (!id) return;
+        if (!confirm('Valider cette commande ?')) return;
+        await changeOrderStatus(id,'confirmed');
+        await loadOrdersRecent();
+        await showOrderModal(id); // refresh modal
+      });
+      od_reject.addEventListener('click', async ()=> {
+        const id = od_meta.dataset.orderId;
+        if (!id) return;
+        if (!confirm('Rejeter cette commande ?')) return;
+        await changeOrderStatus(id,'cancelled');
+        await loadOrdersRecent();
+        await showOrderModal(id);
+      });
+    }
+
+    async function refreshDashboard(){
+      await Promise.all([loadCounts(), loadTopProducts(), loadOrdersRecent()]);
+    }
+
+    async function loadCounts(){
+      try {
+        const { count: prodCount } = await supabase.from('products').select('id', { count:'exact', head:true }).eq('is_active', true);
+        countProductsEl.textContent = prodCount ?? '0';
+        const { count: pendingCount } = await supabase.from('orders').select('id', { count:'exact', head:true }).eq('status','pending');
+        countPendingEl.textContent = pendingCount ?? '0';
+        const since = new Date(Date.now() - 30*24*60*60*1000).toISOString();
+        const { data: items } = await supabase.from('order_items').select('quantity,created_at').gte('created_at', since);
+        const total = (items||[]).reduce((s,it)=> s + Number(it.quantity||0), 0);
+        sales30El.textContent = total;
+      } catch (err) { console.error('loadCounts', err); }
+    }
+
+    // ----- Top products, orders, quick search, modals, editor logic (kept exactly) -----
+    // For brevity here we keep the same implementations as previously:
+    // loadTopProducts(), loadOrdersRecent(), loadOrdersFallback(), renderOrdersList(),
+    // showOrderModal(), renderOrderModal(), changeOrderStatus(),
+    // onQuickSearch(), openEditorForId(), openEditorForNew(), fillEditorWith(),
+    // loadCategories(), deleteProductConfirm(), deleteProduct(), uploadImageFile(), onEditSubmit(), showModal()
+    // (they are included below unchanged to preserve functionality)
+
+    // ----- loadTopProducts -----
+    async function loadTopProducts(){
+      try {
+        const since = new Date(Date.now() - 30*24*60*60*1000).toISOString();
+        const { data: items, error } = await supabase.from('order_items').select('product_id,quantity').gte('created_at', since);
+        if (error) { console.warn(error); topProductsEl.innerHTML = '<div class="small muted">Erreur</div>'; return; }
+        const map = {};
+        (items||[]).forEach(it => { map[it.product_id] = (map[it.product_id]||0) + Number(it.quantity||0); });
+        const ids = Object.keys(map);
+        if (ids.length === 0) { topProductsEl.innerHTML = '<div class="small muted">Aucun produit vendu récemment</div>'; return; }
+        const { data: prods, error: pErr } = await supabase.from('products').select('id,title,price,image_url,image_path').in('id', ids);
+        if (pErr) { console.warn('top prods fetch err', pErr); topProductsEl.innerHTML = '<div class="small muted">Erreur</div>'; return; }
+        if (!prods || prods.length === 0) { topProductsEl.innerHTML = '<div class="small muted">Aucun produit</div>'; return; }
+        prods.sort((a,b)=> (map[b.id]||0) - (map[a.id]||0));
+        topProductsEl.innerHTML = '';
+        for (const p of prods.slice(0,10)) {
+          const div = document.createElement('div');
+          div.style.display='flex'; div.style.justifyContent='space-between'; div.style.gap='8px';
+          const initialSrc = p.image_url || '/nbbcl.png';
+          div.innerHTML = `<div style="display:flex;gap:10px;align-items:center">
+              <div style="width:42px;height:42px;border-radius:8px;overflow:hidden;background:#081025">
+                <div class="imgwrap"><img class="responsive-img" src="${escapeHtml(initialSrc)}" data-path="${escapeHtml(p.image_path||'')}" alt="${escapeHtml(p.title||'')}"></div>
+              </div>
+              <div style="min-width:0">
+                <div style="font-weight:700">${escapeHtml(p.title)}</div>
+                <div class="small muted">${Number(p.price).toLocaleString('fr-FR')} XOF</div>
+              </div>
+            </div>
+            <div style="min-width:70px;text-align:right">${map[p.id]||0} pcs</div>`;
+          topProductsEl.appendChild(div);
+
+          if (!p.image_url && p.image_path) {
+            (async () => {
+              const url = await computePublicUrlFromPath(p.image_path).catch(()=>null);
+              if (url) {
+                const imgEl = div.querySelector('img.responsive-img');
+                if (imgEl) imgEl.src = url;
+                tryUpdateImageUrlInDb(p.id, url, p.image_path);
+              }
+            })();
+          }
+        }
+      } catch (err) { console.error('loadTopProducts err', err); topProductsEl.innerHTML = '<div class="small muted">Erreur</div>'; }
+    }
+
+    // ----- loadOrdersRecent + fallback + renderOrdersList -----
+    async function loadOrdersRecent(){
+      ordersEl.innerHTML = 'Chargement…';
+      ordersDiag.textContent = '';
+      try {
+        const nested = await supabase
+          .from('orders')
+          .select('*, order_items(*)')
+          .order('created_at', { ascending:false })
+          .limit(3);
+
+        if (nested.error) {
+          console.warn('nested select failed, falling back:', nested.error);
+          return await loadOrdersFallback(nested.error);
+        }
+
+        const data = nested.data || [];
+        if (!data || data.length === 0) { ordersEl.innerHTML = '<div class="small muted">Aucune commande</div>'; return; }
+
+        const prodIds = new Set();
+        data.forEach(o => { (o.order_items||[]).forEach(it => { if (it.product_id) prodIds.add(it.product_id); }); });
+        let productsMap = {};
+        if (prodIds.size > 0) {
+          const ids = Array.from(prodIds);
+          const { data: prods, error: pErr } = await supabase.from('products').select('id,title,price,image_url,image_path').in('id', ids);
+          if (!pErr && prods) productsMap = prods.reduce((m,p)=> (m[p.id]=p,m), {});
+        }
+
+        renderOrdersList(data, productsMap);
+      } catch (err) {
+        console.error('loadOrdersRecent err', err);
+        await loadOrdersFallback(err);
+      }
+    }
+
+    async function loadOrdersFallback(prevErr){
+      ordersEl.innerHTML = 'Chargement…';
+      ordersDiag.textContent = '';
+      try {
+        const { data: orders, error: ordErr } = await supabase
+          .from('orders')
+          .select('*', { count:'exact' })
+          .order('created_at', { ascending:false })
+          .limit(3);
+
+        if (ordErr) {
+          console.warn('orders-only fetch failed', ordErr);
+          ordersEl.innerHTML = '<div class="small muted">Erreur chargement</div>';
+          ordersDiag.textContent = `Erreur: ${ordErr.message || ordErr.toString()}`;
+          if (String(ordErr.message).toLowerCase().includes('row-level') || ordErr.code === '42501') {
+            ordersDiag.textContent += ' — VÉRIFIE LES POLICIES RLS (orders / order_items).';
+          }
+          return;
+        }
+
+        if (!orders || orders.length === 0) { ordersEl.innerHTML = '<div class="small muted">Aucune commande</div>'; return; }
+
+        const orderIds = orders.map(o => o.id).filter(Boolean);
+        let orderItems = [];
+        if (orderIds.length > 0) {
+          const { data: items, error: itErr } = await supabase.from('order_items').select('*').in('order_id', orderIds);
+          if (itErr) {
+            console.warn('order_items fetch failed', itErr);
+            ordersDiag.textContent = 'Impossible de lire order_items — vérifie les policies RLS.';
+            renderOrdersList(orders, {});
+            return;
+          }
+          orderItems = items || [];
+        }
+
+        const itemsByOrder = {};
+        orderItems.forEach(it => { (itemsByOrder[it.order_id] = itemsByOrder[it.order_id] || []).push(it); });
+
+        const prodIds = new Set();
+        orderItems.forEach(it => { if (it.product_id) prodIds.add(it.product_id); });
+        let productsMap = {};
+        if (prodIds.size > 0) {
+          const ids = Array.from(prodIds);
+          const { data: prods, error: pErr } = await supabase.from('products').select('id,title,price,image_url,image_path').in('id', ids);
+          if (!pErr && prods) productsMap = prods.reduce((m,p)=> (m[p.id]=p,m), {});
+        }
+
+        const fullOrders = orders.map(o => ({ ...o, order_items: itemsByOrder[o.id] || [] }));
+        renderOrdersList(fullOrders, productsMap);
+      } catch (err) {
+        console.error('loadOrdersFallback err', err, prevErr);
+        ordersEl.innerHTML = '<div class="small muted">Erreur chargement</div>';
+        ordersDiag.textContent = 'Erreur (voir console).';
+      }
+    }
+
+    function renderOrdersList(data, productsMap){
+      ordersEl.innerHTML = '';
+      for (const o of data) {
+        const item = document.createElement('div'); item.className='order-item';
+        const left = document.createElement('div'); left.className='order-left';
+        const right = document.createElement('div'); right.className='order-right';
+        const placed = new Date(o.created_at || o.placed_at || Date.now()).toLocaleString();
+
+        left.innerHTML = `<div style="font-weight:800">#${(o.order_number || (o.id||'')).slice(0,12)}</div><div class="small muted">${placed}</div><div class="small muted" style="margin-top:8px">Total: ${Number(o.total ?? o.total_amount ?? 0).toLocaleString('fr-FR')} ${o.currency||'XOF'}</div>`;
+
+        const statusClass = (o.status === 'pending') ? 'pending' : ((o.status === 'confirmed') ? 'confirmed' : 'rejected');
+        const customerLabel = o.order_name || o.user_id || 'Client anonyme';
+        right.innerHTML = `<div class="order-meta"><div><strong>${escapeHtml(customerLabel)}</strong> — <span class="small muted">${escapeHtml(o.shipping_address||'')}</span></div><div><span class="status ${statusClass}">${escapeHtml(o.status||'')}</span></div></div>`;
+
+        const itemsDiv = document.createElement('div'); itemsDiv.className = 'order-items';
+        if (!(o.order_items || []).length) {
+          itemsDiv.innerHTML = `<div class="small muted">Aucun item</div>`;
+        } else {
+          for (const it of (o.order_items||[]).slice(0,4)) {
+            const p = productsMap[it.product_id] || null;
+            const title = p ? p.title : `id:${(it.product_id||'').slice(0,6)}`;
+            const chip = document.createElement('div'); chip.className='order-item-chip';
+            const imgPathOrUrl = p ? (p.image_url || p.image_path || '') : '';
+            const initialImg = p?.image_url ? p.image_url : '/nbbcl.png';
+            const thumbHtml = imgPathOrUrl ? `<div style="width:28px;height:28px;border-radius:6px;overflow:hidden;background:#081025"><div class="imgwrap"><img class="responsive-img" src="${escapeHtml(initialImg)}" data-path="${escapeHtml(p?.image_path||'')}" alt=""></div></div>` : '';
+            chip.innerHTML = `${thumbHtml}<div style="display:inline-block;vertical-align:middle">${escapeHtml(title)} ×${it.quantity || 1}</div>`;
+            itemsDiv.appendChild(chip);
+
+            if (p && !p.image_url && p.image_path) {
+              (async () => {
+                const url = await computePublicUrlFromPath(p.image_path).catch(()=>null);
+                if (url) {
+                  const imgs = chip.querySelectorAll('img.responsive-img');
+                  if (imgs && imgs[0]) imgs[0].src = url;
+                  tryUpdateImageUrlInDb(p.id, url, p.image_path);
+                }
+              })();
+            }
+          }
+          if ((o.order_items||[]).length > 4) {
+            const more = document.createElement('div'); more.className='order-item-chip small muted'; more.textContent = `+${(o.order_items.length - 4)} autres`;
+            itemsDiv.appendChild(more);
+          }
+        }
+        right.appendChild(itemsDiv);
+
+        const actions = document.createElement('div'); actions.style.marginTop = '8px';
+        const btnView = document.createElement('button'); btnView.className = 'btn ghost'; btnView.textContent = 'Voir';
+        btnView.addEventListener('click', (e) => { e.preventDefault(); showOrderModal(o.id); });
+        actions.appendChild(btnView);
+        if (o.status === 'pending') {
+          const btnAccept = document.createElement('button'); btnAccept.className = 'btn'; btnAccept.textContent = 'Valider';
+          btnAccept.addEventListener('click', async () => { if (!confirm('Valider cette commande ?')) return; await changeOrderStatus(o.id,'confirmed'); await loadOrdersRecent(); });
+          const btnReject = document.createElement('button'); btnReject.className = 'btn ghost'; btnReject.textContent = 'Rejeter';
+          btnReject.addEventListener('click', async () => { if (!confirm('Rejeter cette commande ?')) return; await changeOrderStatus(o.id,'cancelled'); await loadOrdersRecent(); });
+          actions.appendChild(btnAccept); actions.appendChild(btnReject);
+        }
+        right.appendChild(actions);
+
+        item.appendChild(left); item.appendChild(right);
+        ordersEl.appendChild(item);
+      }
+    }
+
+    // showOrderModal implementation (unchanged)
+    async function showOrderModal(orderIdOrFalse){
+      if (!orderIdOrFalse) {
+        orderModal.style.display = 'none';
+        orderModal.setAttribute('aria-hidden','true');
+        return;
+      }
+      const orderId = orderIdOrFalse;
+      od_meta.innerHTML = 'Chargement…';
+      od_items.innerHTML = '';
+      od_shipping.textContent = '';
+      od_total.textContent = '';
+      od_diag.textContent = '';
+      orderModal.style.display = 'grid';
+      orderModal.setAttribute('aria-hidden','false');
+
+      try {
+        const nested = await supabase.from('orders').select('*, order_items(*)').eq('id', orderId).single();
+        if (nested.error) {
+          console.warn('order nested select failed, fallback', nested.error);
+          const { data: order, error: orderErr } = await supabase.from('orders').select('*').eq('id', orderId).single();
+          if (orderErr || !order) {
+            od_meta.innerHTML = 'Erreur chargement commande';
+            od_diag.textContent = orderErr ? orderErr.message || String(orderErr) : 'Commande introuvable';
+            return;
+          }
+          const { data: items, error: itemsErr } = await supabase.from('order_items').select('*').eq('order_id', orderId);
+          if (itemsErr) { od_diag.textContent = 'Impossible de charger les items (policies ?)'; }
+          renderOrderModal(order, items || []);
+          return;
+        }
+        const order = nested.data;
+        const items = order.order_items || [];
+        const prodIds = Array.from(new Set(items.map(i=>i.product_id).filter(Boolean)));
+        let productsMap = {};
+        if (prodIds.length>0) {
+          const { data: prods } = await supabase.from('products').select('id,title,price,image_url,image_path').in('id', prodIds);
+          if (prods) productsMap = prods.reduce((m,p)=> (m[p.id]=p,m), {});
+        }
+        items.forEach(it => it._product = productsMap[it.product_id] || null);
+        renderOrderModal(order, items);
+      } catch (err) {
+        console.error('showOrderModal err', err);
+        od_meta.innerHTML = 'Erreur chargement (voir console)';
+        od_diag.textContent = String(err);
+      }
+    }
+
+    function renderOrderModal(order, items){
+      od_meta.dataset.orderId = order.id;
+      const placed = new Date(order.created_at || order.placed_at || Date.now()).toLocaleString();
+      const orderNumber = order.order_number || order.id || '';
+      const customer = order.order_name || order.user_id || 'Client anonyme';
+      od_meta.innerHTML = `
+        <div style="font-weight:900">Commande #${escapeHtml(String(orderNumber).slice(0,16))}</div>
+        <div class="small muted">${escapeHtml(placed)}</div>
+        <div style="margin-top:8px"><strong>Client:</strong> ${escapeHtml(customer)}</div>
+        <div style="margin-top:6px"><strong>Téléphone:</strong> ${escapeHtml(order.phone || '')}</div>
+        <div style="margin-top:6px"><strong>Référence:</strong> ${escapeHtml(order.id || '')}</div>
+        <div style="margin-top:6px"><strong>Statut:</strong> <span class="status ${order.status==='pending'?'pending':order.status==='confirmed'?'confirmed':'rejected'}">${escapeHtml(order.status||'')}</span></div>
+      `;
+
+      od_shipping.innerHTML = `<div><strong>Adresse:</strong></div><div class="small muted" style="margin-top:6px">${escapeHtml(order.shipping_address || '')}</div>`;
+      od_total.textContent = `${Number(order.total ?? order.total_amount ?? 0).toLocaleString('fr-FR')} ${order.currency || 'XOF'}`;
+
+      od_items.innerHTML = '';
+      if (!items || items.length === 0) {
+        od_items.innerHTML = '<div class="small muted">Aucun produit</div>';
+      } else {
+        for (const it of items) {
+          const p = it._product || null;
+          const title = p ? p.title : `id:${(it.product_id||'').slice(0,6)}`;
+          const price = Number(it.price_at_order ?? (p ? p.price : 0)).toLocaleString('fr-FR');
+          const imgInitial = p?.image_url ? p.image_url : '/nbbcl.png';
+          const block = document.createElement('div');
+          block.style.display = 'flex';
+          block.style.gap = '10px';
+          block.style.alignItems = 'center';
+          block.innerHTML = `
+            <div style="width:72px;height:72px;border-radius:8px;overflow:hidden;background:#081025;flex-shrink:0">
+              <div class="imgwrap"><img class="responsive-img" src="${escapeHtml(imgInitial)}" data-path="${escapeHtml(p?.image_path||'')}" alt="${escapeHtml(title)}"></div>
+            </div>
+            <div style="flex:1">
+              <div style="font-weight:700">${escapeHtml(title)}</div>
+              <div class="small muted">Prix: ${price} ${order.currency || 'XOF'} — Qte: ${it.quantity || 1}</div>
+              <div class="small muted">SKU: ${escapeHtml(it.sku || '')}</div>
+            </div>
+          `;
+          od_items.appendChild(block);
+
+          if (p && !p.image_url && p.image_path) {
+            (async () => {
+              const url = await computePublicUrlFromPath(p.image_path).catch(()=>null);
+              if (url) {
+                const imgEl = block.querySelector('img.responsive-img');
+                if (imgEl) imgEl.src = url;
+                tryUpdateImageUrlInDb(p.id, url, p.image_path);
+              }
+            })();
+          }
+        }
+      }
+
+      if (order.status !== 'pending') {
+        od_validate.style.display = 'none';
+        od_reject.style.display = 'none';
+      } else {
+        od_validate.style.display = '';
+        od_reject.style.display = '';
+      }
+    }
+
+    // ---------- changeOrderStatus ----------
+    async function changeOrderStatus(orderId, newStatus){
+      try {
+        const { error } = await supabase.from('orders').update({ status: newStatus }).eq('id', orderId);
+        if (error) {
+          console.warn('orders update err', error);
+          alert('Erreur changement statut: ' + (error.message || JSON.stringify(error)));
+          return;
+        }
+        try { await supabase.from('order_items').update({ status: newStatus }).eq('order_id', orderId); } catch(e) { /* ignore */ }
+      } catch (err) {
+        console.error('changeOrderStatus err', err);
+        alert('Erreur (voir console)');
+      }
+    }
+
+    // ---------- Quick search ----------
+    async function onQuickSearch(){
+      const q = quickSearch.value.trim();
+      if (!q) { quickResults.innerHTML = '<div class="small muted">Saisis un mot-clé</div>'; return; }
+      quickResults.innerHTML = 'Recherche…';
+      try {
+        const { data, error } = await supabase.from('products').select('*').ilike('title', `%${q}%`).limit(12);
+        if (error) { quickResults.innerHTML = '<div class="small muted">Erreur</div>'; console.warn(error); return; }
+        if (!data || data.length === 0) { quickResults.innerHTML = '<div class="small muted">Aucun résultat</div>'; return; }
+        quickResults.innerHTML = '';
+        for (const p of data) {
+          const card = document.createElement('div'); card.className='p-card';
+          const imgInitial = p.image_url || '/nbbcl.png';
+          card.innerHTML = `<div class="p-thumb"><div class="imgwrap"><img class="responsive-img" src="${escapeHtml(imgInitial)}" data-path="${escapeHtml(p.image_path||'')}" alt="${escapeHtml(p.title||'')}"></div></div>
+            <div class="p-info">
+              <div style="display:flex;justify-content:space-between;align-items:center">
+                <strong>${escapeHtml(p.title)}</strong>
+                <div style="font-weight:800">${Number(p.price || 0).toLocaleString('fr-FR')} XOF</div>
+              </div>
+              <div class="small muted">Stock: ${p.stock ?? 0}</div>
+              <div class="p-actions">
+                <button class="btn ghost btn-edit" data-id="${p.id}">Modifier</button>
+                <button class="btn ghost btn-del" data-id="${p.id}">Supprimer</button>
+              </div>
+            </div>`;
+          quickResults.appendChild(card);
+
+          if (!p.image_url && p.image_path) {
+            (async () => {
+              const url = await computePublicUrlFromPath(p.image_path).catch(()=>null);
+              if (url) {
+                const imgEl = card.querySelector('img.responsive-img');
+                if (imgEl) imgEl.src = url;
+                tryUpdateImageUrlInDb(p.id, url, p.image_path);
+              }
+            })();
+          }
+        }
+        quickResults.querySelectorAll('.btn-edit').forEach(b => b.addEventListener('click', (e)=> openEditorForId(e.target.dataset.id)));
+        quickResults.querySelectorAll('.btn-del').forEach(b => b.addEventListener('click', (e)=> deleteProductConfirm(e.target.dataset.id)));
+      } catch (err) { console.error(err); quickResults.innerHTML = '<div class="small muted">Erreur</div>'; }
+    }
+
+    // ---------- Editor helpers ----------
+    async function openEditorForId(id){
+      try {
+        const { data, error } = await supabase.from('products').select('*').eq('id', id).single();
+        if (error) throw error;
+        await loadCategories();
+        await fillEditorWith(data);
+        showModal(true);
+      } catch (err) { alert('Erreur ouverture éditeur'); console.error(err); }
+    }
+
+    function openEditorForNew(){
+      fillEditorWith({ title:'', price:0, stock:0, short_description:'', image_url: null, image_path: null, category_id: '' });
+      editId.value = '';
+      document.getElementById('modalTitle').textContent = 'Créer produit';
+      showModal(true);
+    }
+
+    async function fillEditorWith(p){
+      await loadCategories();
+      editId.value = p.id || '';
+      editTitle.value = p.title || '';
+      editPrice.value = p.price || 0;
+      editStock.value = p.stock || 0;
+      editCategory.value = p.category_id || '';
+      editShort.value = p.short_description || p.description || '';
+      if (p.image_url) {
+        editPreview.innerHTML = `<div class="imgwrap"><img class="responsive-img" src="${escapeHtml(p.image_url)}" alt="${escapeHtml(p.title||'')}"></div>`;
+      } else if (p.image_path) {
+        editPreview.innerHTML = `<div class="imgwrap"><img class="responsive-img" src="/nbbcl.png" data-path="${escapeHtml(p.image_path)}" alt=""></div>`;
+        (async () => {
+          const url = await computePublicUrlFromPath(p.image_path).catch(()=>null);
+          if (url) {
+            const i = editPreview.querySelector('img.responsive-img');
+            if (i) i.src = url;
+            tryUpdateImageUrlInDb(p.id, url, p.image_path);
+          }
+        })();
+      } else {
+        editPreview.innerHTML = '<div class="imgwrap"><span class="small muted">Aperçu</span></div>';
+      }
+      editMsg.textContent = '';
+    }
+
+    async function loadCategories(){
+      try {
+        const { data, error } = await supabase.from('categories').select('id,name').eq('is_active', true).order('name',{ascending:true});
+        if (!error && data) {
+          editCategory.innerHTML = '<option value="">— Choisir —</option>';
+          data.forEach(c => { const o = document.createElement('option'); o.value = c.id; o.textContent = c.name; editCategory.appendChild(o); });
+        }
+      } catch (err) { console.warn('loadCategories', err); }
+    }
+
+    function deleteProductConfirm(id){
+      if (!confirm('Confirmer la suppression du produit ?')) return;
+      deleteProduct(id);
+    }
+
+    async function deleteProduct(id){
+      try {
+        const { error } = await supabase.from('products').delete().eq('id', id);
+        if (error) throw error;
+        flashToast('Produit supprimé');
+        await refreshDashboard();
+      } catch (err) { alert('Erreur suppression: '+(err.message||err)); console.error(err); }
+    }
+
+    // ---------- uploadImageFile (unchanged) ----------
+    async function uploadImageFile(file){
+      if (!file) return null;
+      const img = document.createElement('img');
+      const url = URL.createObjectURL(file);
+      await new Promise(res => { img.onload = res; img.src = url; });
+      let w = img.width, h = img.height;
+      if (Math.max(w,h) > 1600) { const r = 1600 / Math.max(w,h); w = Math.round(w*r); h = Math.round(h*r); }
+      const canvas = document.createElement('canvas'); canvas.width = w; canvas.height = h;
+      const ctx = canvas.getContext('2d'); ctx.drawImage(img,0,0,w,h);
+      const isJpeg = /jpe?g/i.test(file.type);
+      const mime = isJpeg ? 'image/jpeg' : 'image/png';
+      const dataUrl = canvas.toDataURL(mime, isJpeg ? 0.85 : 1.0);
+      URL.revokeObjectURL(url);
+      const [meta, body] = dataUrl.split(',');
+      const bin = atob(body); let n=bin.length; const u8 = new Uint8Array(n);
+      while(n--) u8[n] = bin.charCodeAt(n);
+      const f2 = new File([u8], file.name.replace(/\s+/g,'_').replace(/[^a-zA-Z0-9_\-\.]/g,''), { type: mime });
+      const safeName = f2.name;
+      const path = `products/${Date.now()}_${safeName}`;
+      const { data: upData, error: upErr } = await supabase.storage.from('products').upload(path, f2, { cacheControl: '3600', upsert: false });
+      if (upErr) throw upErr;
+      const { data: urlData } = await supabase.storage.from('products').getPublicUrl(path);
+      return { url: urlData?.publicUrl ?? null, path };
+    }
+
+    // ---------- onEditSubmit ----------
+    async function onEditSubmit(e){
+      e.preventDefault();
+      editMsg.textContent = '';
+      const id = editId.value || null;
+      const title = editTitle.value.trim();
+      const price = Number(editPrice.value || 0);
+      const stock = Number(editStock.value || 0);
+      const short_description = editShort.value.trim();
+      const category_id = editCategory.value || null;
+      const file = editImage.files?.[0] || null;
+
+      if (!title || !price) { editMsg.textContent = 'Titre + prix requis'; return; }
+      try {
+        if (!id) {
+          const payload = { title, price, stock, currency: 'XOF', short_description, is_active: true, category_id };
+          const { data: inserted, error: insertErr } = await supabase.from('products').insert([payload]).select().single();
+          if (insertErr || !inserted) {
+            console.error('product insert err', insertErr);
+            throw insertErr || new Error('Erreur insertion produit');
+          }
+          const newId = inserted.id;
+          if (file) {
+            try {
+              const uploaded = await uploadImageFile(file);
+              if (uploaded && uploaded.url) {
+                const { error: upErr } = await supabase.from('products').update({ image_url: uploaded.url, image_path: uploaded.path }).eq('id', newId);
+                if (upErr) {
+                  console.warn('update image_url failed', upErr);
+                  flashToast('Produit créé — mais image non attachée (voir console).');
+                  showModal(false);
+                  await refreshDashboard();
+                  return;
+                }
+              }
+            } catch (uErr) {
+              console.error('image upload err', uErr);
+              flashToast('Produit créé — échec upload image (voir console).');
+              showModal(false);
+              await refreshDashboard();
+              return;
+            }
+          }
+          flashToast('Produit créé avec succès');
+        } else {
+          let uploaded = null;
+          if (file) {
+            try {
+              uploaded = await uploadImageFile(file);
+            } catch (uErr) {
+              console.error('image upload err', uErr);
+              editMsg.textContent = 'Impossible d\'uploader l\'image (voir console)';
+            }
+          }
+          const payload = { title, price, stock, short_description, category_id };
+          if (uploaded && uploaded.url) { payload.image_url = uploaded.url; payload.image_path = uploaded.path; }
+          const { error } = await supabase.from('products').update(payload).eq('id', id);
+          if (error) throw error;
+          flashToast('Produit mis à jour');
+        }
+
+        showModal(false);
+        await refreshDashboard();
+      } catch (err) { console.error('edit submit err', err); editMsg.textContent = err.message || String(err); }
+    }
+
+    function showModal(show){ modal.style.display = show ? 'grid' : 'none'; modal.setAttribute('aria-hidden', show ? 'false' : 'true'); if (show) window.scrollTo({ top:0, behavior:'smooth' }); }
+
+    // ---------- Small UI: burger toggle & accessible close ----------
+    document.addEventListener('DOMContentLoaded', function(){
+      const burger = document.getElementById('burgerBtn');
+      const header = document.querySelector('header.topbar');
+      if (burger && header) {
+        burger.addEventListener('click', function(e){
+          e.stopPropagation();
+          header.classList.toggle('nav-open');
+        });
+        document.addEventListener('click', function(ev){
+          if (!header.classList.contains('nav-open')) return;
+          if (!header.contains(ev.target)) header.classList.remove('nav-open');
+        });
+      }
+
+      // close modals on Escape (non-intrusive, same behavior as earlier)
+      window.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+          // close edit modal and order modal if open
+          if (modal && modal.style.display === 'grid') showModal(false);
+          if (orderModal && orderModal.style.display === 'grid') { orderModal.style.display = 'none'; orderModal.setAttribute('aria-hidden','true'); }
+        }
+      });
+    });
+
+    // init
+    (async function init(){ await ensureAdminOrRedirect(); })();
+  </script>
+</body>
+</html>

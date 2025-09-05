@@ -1,0 +1,719 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <title>Historique des commandes • MedicalShop</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <style>
+    :root{
+      --bg-1:#061025; --bg-2:#07182a; --panel:#0f172a; --accent:#1f6feb; --accent-2:#22c55e;
+      --muted:#94a3b8; --white:#e6eef8; --glass: rgba(255,255,255,0.04);
+      --radius:12px; --shadow: 0 12px 30px rgba(0,0,0,.28);
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{ margin:0; font-family:Inter,system-ui,Roboto,Arial; color:var(--white);
+      background:linear-gradient(180deg,var(--bg-1),var(--bg-2)); }
+
+    a{ color:inherit; text-decoration:none }
+    button{ font:inherit }
+
+    /* Header */
+    header.top{
+      position:sticky; top:0; z-index:50;
+      display:flex; align-items:center; gap:12px; padding:12px 16px;
+      border-bottom:1px solid rgba(255,255,255,0.06);
+      background:linear-gradient(180deg,#0a142b99,#0a142bcc);
+      backdrop-filter:saturate(120%) blur(6px);
+    }
+    .brand{ display:flex; align-items:center; gap:10px; font-weight:800; font-size:18px; min-width:0 }
+    .logo{ width:40px;height:40px;border-radius:10px;display:grid;place-items:center;
+      background:linear-gradient(135deg,var(--accent),var(--accent-2)); font-weight:900 }
+    nav.topnav{ margin-left:auto; display:flex; gap:8px; align-items:center; }
+    nav.topnav a{ color:var(--muted); padding:8px 10px; border-radius:8px }
+    nav.topnav a:hover{ background:var(--glass); color:var(--white) }
+
+    /* Mobile nav toggle */
+    .nav-toggle{
+      display:none; margin-left:auto; border:1px solid var(--glass); background:transparent;
+      color:var(--white); padding:8px 10px; border-radius:10px; cursor:pointer;
+    }
+    .nav-panel{
+      display:none; position:absolute; left:12px; right:12px; top:60px; z-index:60;
+      background:linear-gradient(180deg,#0d1a36,#0b1630); border:1px solid var(--glass);
+      border-radius:12px; box-shadow:var(--shadow); padding:6px;
+    }
+    .nav-panel a{ display:block; padding:10px 12px; border-radius:10px; color:var(--white) }
+    .nav-panel a:hover{ background:rgba(255,255,255,0.06) }
+
+    /* Layout */
+    .container{ max-width:1260px; margin:18px auto; padding:0 12px 18px; }
+    .panel{ background:linear-gradient(180deg,var(--panel),#071428); border-radius:var(--radius);
+      padding:14px; border:1px solid rgba(255,255,255,0.06); box-shadow:var(--shadow) }
+
+    /* Controls */
+    .controls{
+      display:grid; grid-template-columns: 1fr 180px 150px auto; gap:10px;
+      align-items:center; margin:12px 0;
+    }
+    .controls-inline{ display:flex; gap:8px; justify-content:flex-end; flex-wrap:wrap }
+    input, select {
+      width:100%; padding:10px; border-radius:10px; border:1px solid rgba(255,255,255,0.08);
+      background:rgba(255,255,255,0.03); color:var(--white);
+    }
+    input::placeholder{ color:#9fb0c6 }
+    .btn{ background:linear-gradient(135deg,var(--accent),#3ea1ff); border:0; color:white;
+      padding:10px 12px; border-radius:10px; font-weight:800; cursor:pointer }
+    .btn.ghost{ background:transparent; border:1px solid rgba(255,255,255,0.18); color:var(--muted) }
+    .btn:disabled{ opacity:.6; cursor:not-allowed }
+
+    /* Table */
+    .table-wrap{ width:100%; overflow:auto; border-radius:12px; }
+    .table{ width:100%; border-collapse:collapse; min-width:780px }
+    .table th, .table td { text-align:left; padding:12px 10px; border-bottom:1px solid rgba(255,255,255,0.06) }
+    .table th{ font-size:13px; color:var(--muted); font-weight:700 }
+    .order-row{ display:flex; gap:12px; align-items:center }
+    .small{ font-size:13px; color:var(--muted) }
+    .status { padding:6px 10px; border-radius:999px; font-weight:800; font-size:12px; display:inline-block }
+    .status.pending{ background:rgba(255,255,255,0.06); color:var(--muted) }
+    .status.confirmed{ background:linear-gradient(135deg,#18c38b,#10b981); color:white }
+    .status.rejected, .status.cancelled{ background:linear-gradient(135deg,#ff6b6b,#ff8a5c); color:white }
+
+    /* Thumbs */
+    .mini-thumb{ width:56px; height:48px; border-radius:8px; overflow:hidden; background:#071428;
+      display:flex; align-items:center; justify-content:center; flex:0 0 56px; }
+    .mini-thumb img{ display:block; max-width:100%; max-height:100%; object-fit:contain }
+
+    /* Pagination */
+    .pagination{ display:flex; gap:8px; justify-content:flex-end; align-items:center; margin-top:12px }
+    .diag{ color:#ffb86b; margin-top:8px }
+
+    /* Modal */
+    .modal-backdrop{ display:none; position:fixed; inset:0; place-items:center;
+      background:rgba(0,0,0,0.6); z-index:200; padding:12px }
+    .modal.panel{ max-width:980px; width:100%; max-height:90vh; overflow:auto }
+    .modal .preview-large{
+      width:100%; height:320px; border-radius:12px; overflow:hidden; background:#071428;
+      display:flex; align-items:center; justify-content:center;
+    }
+    .modal .preview-large img{ max-width:100%; max-height:100%; object-fit:contain; display:block; }
+
+    /* Medium: narrow table -> enable scroll */
+    @media (max-width:980px){
+      .table{ min-width:680px }
+      .controls{ grid-template-columns: 1fr 1fr; }
+      .controls .controls-inline{ grid-column:1 / -1; justify-content:flex-start }
+    }
+
+    /* Small: stack as cards */
+    @media (max-width:760px){
+      .nav-toggle{ display:block }
+      nav.topnav{ display:none }
+      .container{ padding:0 10px 16px }
+      .controls{ grid-template-columns:1fr; }
+      .table-wrap{ overflow:visible; }
+      .table{ border-collapse:separate; border-spacing:0 10px; min-width:0 }
+      .table thead{ display:none }
+      .table tr{ display:block; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.06); border-radius:12px; padding:10px }
+      .table td{ display:flex; justify-content:space-between; align-items:flex-start; gap:10px; border-bottom:0; padding:8px 6px }
+      .table td::before{ content:attr(data-label); flex:0 0 120px; color:var(--muted); font-weight:700 }
+      .order-row{ gap:10px }
+      .mini-thumb{ width:64px; height:52px; flex:0 0 64px }
+      .pagination{ justify-content:center }
+    }
+
+    /* Very small tweaks */
+    @media (max-width:380px){
+      .logo{ width:36px;height:36px }
+      .brand span{ display:none } /* cache texte si ultra-étroit */
+    }
+
+    /* Focus rings */
+    :focus-visible{ outline:2px solid #3ea1ff; outline-offset:2px; border-radius:8px }
+  </style>
+</head>
+<body>
+  <header class="top" role="banner">
+    <div class="brand">
+      <div class="logo">M+</div>
+      <div style="line-height:1.1;min-width:0"><div style="font-weight:900">Historique des commandes</div>
+        <div class="small">MedicalShop • admin</div></div>
+    </div>
+
+    <button id="navToggle" class="nav-toggle" aria-controls="navPanel" aria-expanded="false">Menu</button>
+    <nav class="topnav" aria-label="Navigation principale">
+      <a href="admin.html">← Dashboard</a>
+      <a href="products_admin.html">Produits</a>
+      <a href="index.html">Site public</a>
+    </nav>
+    <div id="navPanel" class="nav-panel" role="dialog" aria-modal="true" aria-label="Menu">
+      <a href="admin.html">← Dashboard</a>
+      <a href="products_admin.html">Produits</a>
+      <a href="index.html">Site public</a>
+    </div>
+  </header>
+
+  <main class="container" role="main">
+    <div class="panel">
+      <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap">
+        <div>
+          <h2 style="margin:0">Historique des commandes</h2>
+          <div class="small" style="color:var(--muted); margin-top:6px">Liste des transactions — actions : valider / rejeter</div>
+        </div>
+      </div>
+
+      <div class="controls" style="margin-top:12px">
+        <input id="search" placeholder="Recherche ID, nom client ou Order#..." aria-label="Recherche"/>
+        <select id="filterStatus" aria-label="Filtrer par statut">
+          <option value="">Tous statuts</option>
+          <option value="pending">pending</option>
+          <option value="confirmed">confirmed</option>
+          <option value="cancelled">cancelled</option>
+        </select>
+        <select id="perPage" aria-label="Éléments par page">
+          <option value="20">20 / page</option>
+          <option value="50">50 / page</option>
+          <option value="100">100 / page</option>
+        </select>
+        <div class="controls-inline">
+          <button id="btnApply" class="btn ghost">Appliquer</button>
+          <button id="btnExportCsv" class="btn ghost">Exporter CSV</button>
+          <button id="btnExportPdf" class="btn ghost">Exporter PDF</button>
+        </div>
+      </div>
+
+      <div class="table-wrap" role="region" aria-label="Tableau des commandes" tabindex="0">
+        <table class="table" role="table" aria-label="Historique commandes">
+          <thead>
+            <tr>
+              <th scope="col">ID & items</th>
+              <th scope="col">Client</th>
+              <th scope="col">Montant</th>
+              <th scope="col">Statut</th>
+              <th scope="col">Créé</th>
+              <th scope="col" style="text-align:right">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="tbody">
+            <tr><td colspan="6">Chargement…</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="pagination" style="margin-top:12px">
+        <div id="pagerInfo" class="small muted"></div>
+        <button id="prevPage" class="btn ghost" aria-label="Page précédente">Préc</button>
+        <button id="nextPage" class="btn ghost" aria-label="Page suivante">Suiv</button>
+      </div>
+
+      <div id="diag" class="diag" role="status" aria-live="polite"></div>
+    </div>
+  </main>
+
+  <!-- Modal -->
+  <div id="modal" class="modal-backdrop" aria-hidden="true">
+    <div class="modal panel">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px; position:sticky; top:0; background:transparent; padding-bottom:6px">
+        <h3 id="modalTitle" style="margin:0">Détails commande</h3>
+        <button id="modalClose" class="btn ghost" aria-label="Fermer">Fermer</button>
+      </div>
+      <div id="modalContent" style="margin-top:8px"></div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+
+    /* ---------- CONFIG ---------- */
+    const SUPABASE_URL = "https://vrzmowqzegmaymewmbij.supabase.co";
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZyem1vd3F6ZWdtYXltZXdtYmlqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTUzMDMwNzksImV4cCI6MjA3MDg3OTA3OX0.TmkdqXhkVgbfhAWVj-qLC9bDTL0-_YoGz-SgS81sNG0";
+    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    /* ---------- NAV (mobile) ---------- */
+    const navToggle = document.getElementById('navToggle');
+    const navPanel = document.getElementById('navPanel');
+    if (navToggle && navPanel) {
+      const setOpen = (open)=> {
+        navPanel.style.display = open ? 'block' : 'none';
+        navToggle.setAttribute('aria-expanded', String(open));
+        if (open) {
+          const first = navPanel.querySelector('a'); first && first.focus({preventScroll:true});
+        }
+      };
+      navToggle.addEventListener('click',(e)=>{ e.stopPropagation(); setOpen(navPanel.style.display!=='block'); });
+      document.addEventListener('click',(e)=>{ if (navPanel.style.display==='block' && !navPanel.contains(e.target)) setOpen(false) });
+      window.addEventListener('resize',()=>{ if (window.matchMedia('(min-width: 761px)').matches) setOpen(false); });
+      document.addEventListener('keydown', (e)=>{ if (e.key === 'Escape') setOpen(false); });
+    }
+
+    /* ---------- DOM refs ---------- */
+    const $ = s => document.querySelector(s);
+    const tbody = $("#tbody");
+    const search = $("#search");
+    const filterStatus = $("#filterStatus");
+    const perPage = $("#perPage");
+    const btnApply = $("#btnApply");
+    const prevPage = $("#prevPage");
+    const nextPage = $("#nextPage");
+    const pagerInfo = $("#pagerInfo");
+    const btnExportCsv = $("#btnExportCsv");
+    const btnExportPdf = $("#btnExportPdf");
+    const diag = $("#diag");
+
+    const modal = $("#modal");
+    const modalContent = $("#modalContent");
+    const modalClose = $("#modalClose");
+
+    let page = 0;
+    let totalCount = 0;
+
+    function escapeHtml(s=''){ return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+    function isPublicUrl(s){ return typeof s === 'string' && /^https?:\/\//i.test(s); }
+
+    /* ---------- Images (storage public URL) ---------- */
+    async function computePublicUrlFromPath(path){
+      if (!path) return null;
+      if (isPublicUrl(path)) return path;
+      let p = String(path); if (p.startsWith('/')) p = p.slice(1);
+      try { const { data, error } = await supabase.storage.from('products').getPublicUrl(p);
+        if (error) { console.warn('getPublicUrl err', error); return null; }
+        return data?.publicUrl ?? null;
+      } catch(e){ console.warn('computePublicUrl err', e); return null; }
+    }
+    async function tryUpdateImageUrlInDb(productId, imageUrl, imagePath){
+      if (!productId || !imageUrl) return;
+      try { await supabase.from('products').update({ image_url: imageUrl, image_path: imagePath }).eq('id', productId); } catch(_) {}
+    }
+    async function resolveDeferredImages(){
+      const imgs = Array.from(document.querySelectorAll('img[data-path]'));
+      if (!imgs.length) return;
+      await Promise.all(imgs.map(async img => {
+        const path = img.getAttribute('data-path');
+        const prodId = img.getAttribute('data-prod-id') || null;
+        try {
+          const url = await computePublicUrlFromPath(path);
+          if (url) { img.src = url; if (prodId) tryUpdateImageUrlInDb(prodId, url, path); }
+        } catch(e){ console.warn('resolveDeferredImages err', e); }
+        img.removeAttribute('data-path'); if (prodId) img.removeAttribute('data-prod-id');
+      }));
+    }
+
+    /* ---------- Products fetch (robuste) ---------- */
+    async function fetchProductsRobust(ids){
+      if (!ids || ids.length === 0) return [];
+      const uniq = Array.from(new Set(ids.map(String)));
+      try {
+        const { data, error } = await supabase.from('products')
+          .select('id,title,price,image_url,image_path,path,img_url').in('id', uniq);
+        if (!error && Array.isArray(data)) {
+          await Promise.all(data.map(async p => {
+            if (p.image_url && isPublicUrl(p.image_url)) { p._resolved_image = p.image_url; return; }
+            const candidate = p.image_path || p.path || p.img_url || null;
+            if (candidate) {
+              const url = await computePublicUrlFromPath(candidate);
+              if (url) { p._resolved_image = url; tryUpdateImageUrlInDb(p.id, url, candidate); return; }
+            }
+            p._resolved_image = '/public/nbbcl.png';
+          }));
+          return data;
+        }
+        if (error) throw error;
+      } catch (e) { console.warn('fetchProductsRobust .in() failed, fallback per-id', e); }
+      const results = await Promise.all(uniq.map(async id => {
+        try {
+          const { data, error } = await supabase.from('products')
+            .select('id,title,price,image_url,image_path,path,img_url').eq('id', id).limit(1);
+          if (!error && data && data.length > 0) {
+            const p = data[0];
+            if (p.image_url && isPublicUrl(p.image_url)) { p._resolved_image = p.image_url; return p; }
+            const candidate = p.image_path || p.path || p.img_url || null;
+            if (candidate) {
+              const url = await computePublicUrlFromPath(candidate);
+              if (url) { p._resolved_image = url; tryUpdateImageUrlInDb(p.id, url, candidate); return p; }
+            }
+            p._resolved_image = '/public/nbbcl.png';
+            return p;
+          }
+          return null;
+        } catch { return null; }
+      }));
+      return results.filter(Boolean);
+    }
+
+    /* ---------- UI wiring ---------- */
+    btnApply.addEventListener('click', ()=> { page = 0; loadPage(); });
+    prevPage.addEventListener('click', ()=> { if (page>0) { page--; loadPage(); }});
+    nextPage.addEventListener('click', ()=> { page++; loadPage(); });
+    btnExportCsv.addEventListener('click', exportCsv);
+    btnExportPdf.addEventListener('click', exportPdf);
+    search.addEventListener('keydown', (e)=> { if (e.key === 'Enter') { page = 0; loadPage(); } });
+
+    /* ---------- Renderer helpers (responsive labels) ---------- */
+    const labels = ["ID & items","Client","Montant","Statut","Créé","Actions"];
+
+    function trOrderRow({o, productsMap}){
+      const when = new Date(o.placed_at || o.created_at || Date.now()).toLocaleString();
+      const statusClass = o.status === 'pending' ? 'pending' : (o.status === 'confirmed' ? 'confirmed' : (o.status === 'cancelled' ? 'cancelled' : 'rejected'));
+      let thumbHtml = `<div class="mini-thumb"><span class="small">—</span></div>`;
+      if (o.order_items && o.order_items.length > 0) {
+        const first = o.order_items[0];
+        const p = productsMap[String(first.product_id)];
+        const img = p ? (p._resolved_image || p.image_url || p.image_path) : null;
+        if (img) {
+          thumbHtml = isPublicUrl(img)
+            ? `<div class="mini-thumb"><img src="${escapeHtml(img)}" alt=""></div>`
+            : `<div class="mini-thumb"><img src="/public/nbbcl.png" data-path="${escapeHtml(String(img))}" data-prod-id="${escapeHtml(String(p?.id||''))}" alt=""></div>`;
+        }
+      }
+      const clientLabel = o.order_name || o.customer_email || o.customer_id || o.user_email || o.user_id || 'Client anonyme';
+      const totalVal = Number(o.total ?? o.total_amount ?? 0).toLocaleString('fr-FR');
+      const itemsSummary = (o.order_items||[]).map(it => {
+        const p = productsMap[String(it.product_id)] || null;
+        return (p ? p.title : (`id:${String(it.product_id).slice(0,6)}`)) + '×' + (it.quantity||1);
+      }).slice(0,3).join(' / ');
+      const tr = document.createElement('tr');
+      tr.innerHTML =
+        `<td data-label="${labels[0]}"><div class="order-row">${thumbHtml}<div style="margin-left:10px"><div style="font-weight:800">${escapeHtml(String(o.id).slice(0,12))}</div><div class="small">${escapeHtml(itemsSummary)}</div></div></div></td>
+         <td data-label="${labels[1]}">${escapeHtml(clientLabel)}</td>
+         <td data-label="${labels[2]}">${escapeHtml(totalVal)} ${escapeHtml(o.currency || 'XOF')}</td>
+         <td data-label="${labels[3]}"><span class="status ${statusClass}">${escapeHtml(o.status||'')}</span></td>
+         <td data-label="${labels[4]}" class="small">${escapeHtml(when)}</td>
+         <td data-label="${labels[5]}" style="text-align:right">
+           <div style="display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap">
+             <button class="btn ghost btn-view" data-id="${escapeHtml(o.id)}">Voir</button>
+             ${o.status === 'pending'
+               ? `<button class="btn btn-accept" data-id="${escapeHtml(o.id)}">Valider</button>
+                  <button class="btn ghost btn-reject" data-id="${escapeHtml(o.id)}">Rejeter</button>` : ''}
+           </div>
+         </td>`;
+      return tr;
+    }
+
+    function attachRowHandlers(){
+      tbody.querySelectorAll('.btn-accept').forEach(b => b.addEventListener('click', async (e) => {
+        if (!confirm('Valider cette commande ?')) return;
+        await changeOrderStatus(e.currentTarget.dataset.id, 'confirmed');
+      }));
+      tbody.querySelectorAll('.btn-reject').forEach(b => b.addEventListener('click', async (e) => {
+        if (!confirm('Rejeter cette commande ?')) return;
+        await changeOrderStatus(e.currentTarget.dataset.id, 'cancelled');
+      }));
+      tbody.querySelectorAll('.btn-view').forEach(b => b.addEventListener('click', async (e) => {
+        await showOrderDetailModal(e.currentTarget.dataset.id);
+      }));
+    }
+
+    /* ---------- Loaders ---------- */
+    let loading = false;
+    async function loadPage(){
+      if (loading) return; loading = true;
+      tbody.innerHTML = '<tr><td colspan="6">Chargement…</td></tr>';
+      diag.textContent = '';
+      const per = Number(perPage.value || 20);
+      const from = page * per;
+      const to = from + per - 1;
+      const q = (search.value || '').trim();
+      const f = (filterStatus.value || '').trim();
+
+      try {
+        // exact ID
+        if (q) {
+          try {
+            const idRes = await supabase.from('orders').select('*, order_items(*)').eq('id', q).single();
+            if (!idRes.error && idRes.data) {
+              const data = [idRes.data].filter(o => !f || o.status === f);
+              renderOrdersTable(data);
+              totalCount = data.length;
+              pagerInfo.textContent = `Page ${page+1} — ${totalCount} résultat${totalCount>1?'s':''}`;
+              updatePagerButtons();
+              loading = false; return;
+            }
+          } catch(_) {}
+        }
+
+        // search or list
+        let ordersRes = null;
+        if (q) {
+          ordersRes = await supabase.from('orders').select('*, order_items(*)', { count: 'exact' })
+            .or(`order_name.ilike.%${q}%,order_number.ilike.%${q}%`)
+            .order('created_at',{ascending:false})
+            .range(from,to);
+        } else {
+          ordersRes = await supabase.from('orders').select('*, order_items(*)', { count: 'exact' })
+            .order('created_at',{ascending:false})
+            .range(from,to);
+        }
+
+        if (ordersRes.error) throw ordersRes.error;
+        let data = (ordersRes.data || []);
+        if (f) data = data.filter(o => o.status === f);
+
+        totalCount = ordersRes.count ?? data.length;
+        pagerInfo.textContent = `Page ${page+1} — ${totalCount} résultat${totalCount>1?'s':''}`;
+
+        if (!data.length) { tbody.innerHTML = '<tr><td colspan="6">Aucun résultat</td></tr>'; updatePagerButtons(); loading = false; return; }
+
+        // collect product ids
+        const prodIds = new Set();
+        data.forEach(o => (o.order_items||[]).forEach(it => { if (it.product_id !== undefined && it.product_id !== null) prodIds.add(String(it.product_id)); }));
+        const prods = await fetchProductsRobust(Array.from(prodIds));
+        const productsMap = {}; prods.forEach(p => productsMap[String(p.id)] = p);
+
+        renderOrdersRows(data, productsMap);
+        resolveDeferredImages();
+      } catch (err) {
+        console.error('loadPage err', err);
+        diag.textContent = 'Erreur de chargement (voir console).';
+        tbody.innerHTML = '<tr><td colspan="6">Erreur</td></tr>';
+      } finally {
+        updatePagerButtons();
+        loading = false;
+      }
+    }
+
+    function renderOrdersTable(data){
+      const prodIds = new Set();
+      data.forEach(o => (o.order_items||[]).forEach(it => { if (it.product_id !== undefined && it.product_id !== null) prodIds.add(String(it.product_id)); }));
+      fetchProductsRobust(Array.from(prodIds)).then(prods => {
+        const productsMap = {}; prods.forEach(p => productsMap[String(p.id)] = p);
+        renderOrdersRows(data, productsMap);
+        resolveDeferredImages();
+      }).catch(e => {
+        console.warn('renderOrdersTable prod fetch err', e);
+        renderOrdersRows(data, {});
+        resolveDeferredImages();
+      });
+    }
+
+    function renderOrdersRows(data, productsMap){
+      tbody.innerHTML = '';
+      data.forEach(o => tbody.appendChild(trOrderRow({o, productsMap})));
+      attachRowHandlers();
+    }
+
+    function updatePagerButtons(){
+      const per = Number(perPage.value || 20);
+      const maxPage = Math.max(0, Math.ceil((totalCount||0)/per) - 1);
+      prevPage.disabled = page <= 0;
+      nextPage.disabled = page >= maxPage;
+    }
+
+    /* ---------- Modal ---------- */
+    async function showOrderDetailModal(orderId){
+      try {
+        const { data: nestedData, error: nestedErr } = await supabase.from('orders').select('*, order_items(*)').eq('id', orderId).single();
+        let order, items;
+        if (nestedErr) {
+          const { data: ord } = await supabase.from('orders').select('*').eq('id', orderId).single();
+          const { data: its } = await supabase.from('order_items').select('*').eq('order_id', orderId);
+          order = ord; items = its || [];
+        } else {
+          order = nestedData; items = nestedData.order_items || [];
+        }
+        const prodIds = (items||[]).map(it=>String(it.product_id)).filter(Boolean);
+        const products = await fetchProductsRobust(prodIds);
+        const productsMap = {}; products.forEach(p=> productsMap[String(p.id)] = p);
+        showModalContent(order, items, productsMap);
+      } catch (err) {
+        console.error('showOrderDetailModal err', err);
+        alert('Impossible de charger les détails (voir console).');
+      }
+    }
+
+    function showModalContent(order, items, productsMap){
+      const totalVal = Number(order.total ?? order.total_amount ?? 0).toLocaleString('fr-FR');
+      let html = `<div style="display:flex;gap:14px;align-items:flex-start;flex-wrap:wrap;">
+        <div style="flex:1 1 480px; min-width:260px">
+          <div class="preview-large" id="modalPreview"><div style="color:var(--muted)">Chargement image…</div></div>
+        </div>
+        <div style="flex:0 0 320px; min-width:240px; display:flex; flex-direction:column; gap:10px;">
+          <div>
+            <div style="font-weight:900; font-size:18px">#${escapeHtml((order.id||'').toString().slice(0,16))}</div>
+            <div class="small" style="margin-top:6px">${escapeHtml(new Date(order.created_at||order.placed_at||Date.now()).toLocaleString())}</div>
+            <div style="margin-top:8px" class="small">Client: <strong>${escapeHtml(order.order_name || order.customer_email || order.user_email || order.user_id || 'Client anonyme')}</strong></div>
+            <div class="small">Téléphone: ${escapeHtml(order.phone || '')}</div>
+            <div class="small">Order #: ${escapeHtml(order.order_number || '')}</div>
+            <div style="margin-top:8px; font-weight:800">Total: ${escapeHtml(totalVal)} ${escapeHtml(order.currency||'XOF')}</div>
+            <div class="small">Statut: ${escapeHtml(order.status || '')}</div>
+            <div class="small">Adresse: ${escapeHtml(order.shipping_address || '')}</div>
+          </div>
+          <div>
+            <h4 style="margin:6px 0 8px 0">Articles</h4>
+            <div style="display:flex;flex-direction:column;gap:8px; max-height:260px; overflow:auto">`;
+
+      (items || []).forEach(it => {
+        const p = productsMap[String(it.product_id)] || null;
+        const title = p ? p.title : `id:${(it.product_id||'').toString().slice(0,6)}`;
+        const img = p ? (p._resolved_image || p.image_url || p.image_path) : null;
+        const imgHtml = img
+          ? (isPublicUrl(img)
+              ? `<img src="${escapeHtml(img)}" alt="${escapeHtml(title)}">`
+              : `<img src="/public/nbbcl.png" data-path="${escapeHtml(String(img))}" data-prod-id="${escapeHtml(String(p?.id||''))}" alt="${escapeHtml(title)}">`)
+          : `<div style="padding:12px" class="small">Pas d'image</div>`;
+        html += `<div style="display:flex;gap:10px;align-items:center;padding:8px;border-radius:10px;background:rgba(255,255,255,0.04)">
+            <div style="width:72px;height:72px;border-radius:8px;overflow:hidden;background:#071428;display:flex;align-items:center;justify-content:center">
+              ${imgHtml}
+            </div>
+            <div style="flex:1">
+              <div style="font-weight:700">${escapeHtml(title)}</div>
+              <div class="small">Quantité: ${escapeHtml(String(it.quantity || 1))} — Prix: ${escapeHtml(String(it.price_at_order || ''))}</div>
+              <div class="small">Item status: ${escapeHtml(it.status || 'pending')}</div>
+            </div>
+          </div>`;
+      });
+
+      html += `</div></div></div>`;
+      modalContent.innerHTML = html;
+      showModal(true);
+
+      (async function setModalPreview(){
+        let previewEl = document.getElementById('modalPreview');
+        if (!previewEl) return;
+        let mainImg = null;
+        for (const it of items || []) {
+          const p = productsMap[String(it.product_id)] || null;
+          const candidate = p ? (p._resolved_image || p.image_url || p.image_path) : null;
+          if (candidate) { mainImg = candidate; break; }
+        }
+        if (!mainImg) { previewEl.innerHTML = `<div class="small">Aucune image</div>`; return; }
+        previewEl.innerHTML = isPublicUrl(mainImg)
+          ? `<img src="${escapeHtml(mainImg)}" alt="image commande">`
+          : `<img src="/public/nbbcl.png" data-path="${escapeHtml(String(mainImg))}" data-prod-id="">`;
+        resolveDeferredImages();
+      })();
+      resolveDeferredImages();
+    }
+
+    function showModal(show){
+      modal.style.display = show ? 'grid' : 'none';
+      modal.setAttribute('aria-hidden', show ? 'false' : 'true');
+      if (show) modal.querySelector('#modalClose')?.focus({preventScroll:true});
+    }
+    modalClose.addEventListener('click', ()=> showModal(false));
+    modal.addEventListener('click',(e)=>{ if (e.target === modal) showModal(false); });
+    document.addEventListener('keydown',(e)=>{ if (e.key === 'Escape' && modal.getAttribute('aria-hidden')==='false') showModal(false); });
+
+    /* ---------- Status change ---------- */
+    async function changeOrderStatus(orderId, newStatus){
+      try {
+        const { error: e1 } = await supabase.from('orders').update({ status: newStatus }).eq('id', orderId);
+        if (e1) throw e1;
+        try { await supabase.from('order_items').update({ status: newStatus }).eq('order_id', orderId); } catch(_) {}
+        await loadPage();
+      } catch (err) {
+        console.error('changeOrderStatus err', err);
+        alert('Erreur changement statut (voir console)');
+      }
+    }
+
+    /* ---------- Exports ---------- */
+    async function exportCsv(){
+      try {
+        const per = Number(perPage.value || 20);
+        const from = page * per;
+        const to = from + per - 1;
+        const q = (search.value || '').trim();
+        const f = (filterStatus.value || '').trim();
+
+        let orders = null;
+        if (q) {
+          const idRes = await supabase.from('orders').select('*').eq('id', q).single();
+          if (!idRes.error && idRes.data) orders = [idRes.data];
+          else {
+            let res = await supabase.from('orders').select('*').or(`order_name.ilike.%${q}%,order_number.ilike.%${q}%`).range(from,to);
+            orders = (!res.error && res.data) ? res.data : [];
+          }
+        } else {
+          const res = await supabase.from('orders').select('*').order('created_at',{ascending:false}).range(from,to);
+          if (res.error) throw res.error;
+          orders = res.data || [];
+        }
+        if (f) orders = orders.filter(o => o.status === f);
+        if (!orders.length) { alert('Aucune donnée à exporter'); return; }
+
+        const csv = [
+          ['id','order_number','order_name','status','total','currency','created_at','shipping_address'],
+          ...orders.map(r => [r.id, r.order_number || '', (r.order_name||r.customer_email||r.user_email||''), r.status, r.total ?? r.total_amount, r.currency, r.created_at, `"${(r.shipping_address||'').replace(/"/g,'""')}"`])
+        ].map(row => row.join(',')).join('\n');
+        const blob = new Blob([csv], { type:'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a'); a.href = url; a.download = `orders_export_page${page+1}.csv`; a.click();
+        URL.revokeObjectURL(url);
+      } catch (err) {
+        console.error('exportCsv err', err);
+        alert('Erreur export CSV (voir console).');
+      }
+    }
+
+    async function exportPdf(){
+      try {
+        const per = Number(perPage.value || 20);
+        const from = page * per;
+        const to = from + per - 1;
+        const q = (search.value || '').trim();
+        const f = (filterStatus.value || '').trim();
+        let orders = null;
+
+        if (q) {
+          const idRes = await supabase.from('orders').select('*, order_items(*)').eq('id', q).single();
+          if (!idRes.error && idRes.data) orders = [idRes.data];
+          else {
+            let res = await supabase.from('orders').select('*, order_items(*)').or(`order_name.ilike.%${q}%,order_number.ilike.%${q}%`).range(from,to);
+            orders = (!res.error && res.data) ? res.data : [];
+          }
+        } else {
+          const res = await supabase.from('orders').select('*, order_items(*)').order('created_at', { ascending:false }).range(from,to);
+          if (res.error) throw res.error;
+          orders = res.data || [];
+        }
+        if (f) orders = orders.filter(o => o.status === f);
+        if (!orders || !orders.length) { alert('Aucune donnée à exporter'); return; }
+
+        let jsPDFmod = null;
+        try { jsPDFmod = await import('https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js'); } catch(e){ jsPDFmod = null; }
+        if (!jsPDFmod || !jsPDFmod.jsPDF) {
+          const txt = orders.map(o => `Order: ${o.id}\nName: ${o.order_name || ''}\nTotal: ${o.total ?? o.total_amount} ${o.currency || 'XOF'}\nStatus: ${o.status}\nDate: ${o.created_at}\nAddress: ${o.shipping_address || ''}\n\n`).join('\n');
+          const blob = new Blob([txt], { type: 'text/plain;charset=utf-8;' });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a'); a.href = url; a.download = `orders_page${page+1}.txt`; a.click();
+          URL.revokeObjectURL(url);
+          alert('PDF indisponible — exporté en texte.');
+          return;
+        }
+
+        const { jsPDF } = jsPDFmod;
+        const doc = new jsPDF({ unit: 'pt', format: 'a4' });
+        const margin = 40; let y = margin;
+        doc.setFontSize(14); doc.text(`Historique des commandes — Page ${page+1}`, margin, y); y += 24;
+        doc.setFontSize(10);
+
+        for (const o of orders) {
+          const date = new Date(o.created_at || o.placed_at || Date.now()).toLocaleString();
+          const line1 = `#${String(o.id).slice(0,16)}  —  ${(o.order_name || o.customer_email || 'Client')}`;
+          const line2 = `${Number(o.total ?? o.total_amount ?? 0).toLocaleString('fr-FR')} ${o.currency||'XOF'}  |  Statut: ${o.status || ''}  |  ${date}`;
+          doc.text(line1, margin, y); y += 14;
+          doc.text(line2, margin+10, y); y += 16;
+          if (o.order_items && o.order_items.length > 0) {
+            const itemsText = o.order_items.slice(0,6).map(it => `${it.product_id || ''}×${it.quantity || 1}`).join(' ; ');
+            doc.text(`Items: ${itemsText}`, margin+10, y); y += 16;
+          }
+          y += 8; if (y > 770) { doc.addPage(); y = margin; }
+        }
+        doc.save(`orders_page${page+1}.pdf`);
+      } catch (err) {
+        console.error('exportPdf err', err);
+        alert('Erreur export PDF (voir console).');
+      }
+    }
+
+    /* ---------- Init ---------- */
+    (async function init(){
+      try {
+        const { data } = await supabase.auth.getUser();
+        if (!data?.user) { window.location.href = 'admin-login.html'; return; }
+      } catch (err) { console.error('auth check failed', err); }
+      await loadPage();
+    })();
+  </script>
+</body>
+</html>

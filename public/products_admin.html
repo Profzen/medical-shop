@@ -1,0 +1,795 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <title>Produits • Admin — MedicalShop</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <style>
+    :root{
+      --bg-1:#061025; --panel:#0f172a; --accent:#1f6feb; --accent-2:#22c55e;
+      --muted:#94a3b8; --white:#e6eef8; --glass: rgba(255,255,255,0.03);
+      --radius:12px; --shadow:0 12px 35px rgba(2,6,23,0.6);
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%; margin:0; font-family:Inter,system-ui,Roboto,Arial; background:linear-gradient(180deg,var(--bg-1),#071428); color:var(--white); -webkit-font-smoothing:antialiased; overflow-x:hidden}
+    a{color:inherit}
+
+    /* Top bar */
+    .top{ display:flex; align-items:center; gap:12px; padding:12px 16px; border-bottom:1px solid rgba(255,255,255,0.03); position:sticky; top:0; z-index:200; backdrop-filter: blur(6px); }
+    .brand { display:flex; gap:12px; align-items:center; font-weight:800; font-size:18px }
+    .mark { width:36px; height:36px; border-radius:8px; display:grid; place-items:center; background: linear-gradient(135deg,var(--accent),var(--accent-2)); font-weight:900; color:white; }
+    .top .return { margin-left:auto; color:var(--muted); text-decoration:none }
+
+    /* Mobile menu button */
+    .menu-btn{ display:none; background:transparent; border:1px solid rgba(255,255,255,0.04); padding:8px 10px; border-radius:8px; cursor:pointer; color:var(--white); font-weight:700 }
+    .mobile-menu{ display:none; position:absolute; right:12px; top:62px; background:linear-gradient(180deg,var(--panel),#071428); border-radius:10px; padding:8px; border:1px solid rgba(255,255,255,0.04); box-shadow:var(--shadow); min-width:180px }
+    .mobile-menu a{ display:block; padding:8px; color:var(--white); text-decoration:none }
+    .mobile-menu a:hover{ background:rgba(255,255,255,0.02); border-radius:6px }
+
+    .container{ max-width:1180px; margin:18px auto; padding:0 16px 60px; }
+    .panel { background:linear-gradient(180deg,var(--panel), #071428); border-radius:var(--radius); padding:14px; border:1px solid rgba(255,255,255,0.04); box-shadow:var(--shadow); }
+    .controls { display:flex; gap:12px; align-items:center; margin-bottom:12px; flex-wrap:wrap; }
+    .controls-left{ display:flex; gap:10px; align-items:center; flex-wrap:wrap; min-width:0; }
+    .controls-right{ margin-left:auto }
+    input[type="search"], select, input[type="number"], textarea { padding:10px 12px; border-radius:10px; border:1px solid var(--glass); background:rgba(255,255,255,0.02); color:var(--white); outline:none; min-height:40px }
+    select.cat-select, select.cat-filter { background:#fff; color:#000; font-weight:700; padding:10px; border-radius:10px; border:1px solid rgba(0,0,0,0.06) }
+    .btn { background:linear-gradient(135deg,var(--accent),#3ea1ff); border:0; color:white; padding:8px 12px; border-radius:8px; font-weight:700; cursor:pointer }
+    .btn.ghost{ background:transparent; border:1px solid rgba(255,255,255,0.06); color:var(--muted) }
+
+    .products-list { display:flex; flex-direction:column; gap:12px; max-height:62vh; overflow:auto; padding-right:6px; }
+    .product-item{ display:flex; gap:12px; align-items:center; padding:12px; border-radius:10px; background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.03); }
+
+    /* Thumbnail wrapper and universal image rules (centering + contain) */
+    .p-thumb{ width:110px; height:78px; border-radius:8px; overflow:hidden; background:#081025; display:flex; align-items:center; justify-content:center; flex-shrink:0; position:relative }
+    .mThumb{ width:220px; height:140px; border-radius:8px; overflow:hidden; background:#081025; display:flex; align-items:center; justify-content:center }
+    .vp-thumb{ width:100%; height:320px; max-height:60vh; border-radius:8px; overflow:hidden; background:#081025; display:flex; align-items:center; justify-content:center }
+    .imgwrap{ width:100%; height:100%; display:flex; align-items:center; justify-content:center; }
+    .responsive-img { max-width:100%; max-height:100%; width:auto; height:auto; object-fit:contain; display:block; }
+
+    .p-main{ flex:1; min-width:0 }
+    .p-title{ font-weight:800; margin-bottom:6px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap }
+    .p-meta{ color:var(--muted); font-size:13px }
+    .p-tags{ display:flex; gap:8px; margin-top:8px; flex-wrap:wrap }
+    .p-actions{ display:flex; gap:8px; align-items:center; justify-content:flex-end; min-width:220px; flex-shrink:0 }
+    .small{ font-size:13px; color:var(--muted) }
+    .modal-backdrop{ position:fixed; inset:0; display:none; place-items:center; background:rgba(0,0,0,0.6); z-index:300; padding:18px; overflow:auto }
+    .modal { width:100%; max-width:920px; max-height:90vh; overflow:auto }
+    .view-panel{ padding:16px; border-radius:10px; background:linear-gradient(180deg,var(--panel),#071428); border:1px solid rgba(255,255,255,0.03) }
+    .vp-grid{ display:grid; grid-template-columns:1fr 300px; gap:12px }
+    .edit-grid{ display:flex; gap:12px; flex-wrap:wrap }
+    .toast{ position:fixed; right:18px; bottom:24px; background:rgba(0,0,0,0.85); color:white; padding:10px 14px; border-radius:10px; z-index:999; box-shadow:0 10px 30px rgba(0,0,0,0.4); }
+    .hint { color:var(--muted); font-size:13px; margin-top:8px }
+
+    /* small polish */
+    .product-item .p-title { font-size:15px }
+    .product-item .p-meta { font-size:13px }
+    .p-actions button { padding:6px 10px; font-size:13px }
+
+    /* Responsive tweaks */
+    @media (max-width:980px){
+      .vp-grid{ grid-template-columns:1fr; }
+      .p-actions{ min-width:120px; }
+    }
+
+    @media (max-width:800px){
+      .controls{ align-items:flex-start }
+      .controls-left{ width:100%; display:flex; gap:8px; flex-wrap:wrap }
+      .controls-right{ width:100%; display:flex; justify-content:flex-end }
+      .product-item{ padding:10px }
+      .p-thumb{ width:86px; height:64px }
+      .mThumb{ width:160px; height:120px }
+      .products-list{ max-height:56vh }
+
+      /* show menu button */
+      .menu-btn{ display:inline-flex; margin-left:auto }
+    }
+
+    /* Mobile: collapse many things into stacked UI */
+    @media (max-width:520px){
+      .top{ padding:10px 12px }
+      .brand{ font-size:16px }
+      .top .return{ display:none }
+      .controls{ padding:8px 0 }
+      input[type="search"]{ flex:1 1 100%; width:100% }
+      .controls-left > *{ flex:1 1 auto; min-width:0 }
+      .p-thumb{ width:76px; height:58px }
+      .p-actions{ min-width:90px }
+      .modal{ max-width:100%; height:100%; border-radius:0 }
+
+      .mobile-menu{ right:8px; top:56px }
+      .mobile-filters{ display:none; margin-top:8px }
+      .filters-open .mobile-filters{ display:block }
+    }
+
+    /* accessibility focus styles */
+    button:focus, input:focus, select:focus, a:focus{ outline:2px solid rgba(31,111,235,0.6); outline-offset:2px }
+  </style>
+</head>
+<body>
+  <div class="top">
+    <div class="brand"><div class="mark">M+</div>Produits (Admin)</div>
+
+    <!-- Desktop return link (kept) -->
+    <a class="return" href="admin.html">← Retour Dashboard</a>
+
+    <!-- Mobile menu button -->
+    <button id="menuBtn" class="menu-btn" aria-expanded="false" aria-controls="mobileMenu">≡ Menu</button>
+    <div id="mobileMenu" class="mobile-menu" role="menu" aria-hidden="true">
+      <a href="admin.html" role="menuitem">← Retour Dashboard</a>
+      <a href="#products" role="menuitem" id="mobileJumpProducts">Produits</a>
+      <a href="#" role="menuitem" id="mobileProcessPending">Opérations en attente</a>
+    </div>
+  </div>
+
+  <main class="container" role="main">
+    <div class="panel" aria-label="Gestion des produits">
+      <div class="controls" role="toolbar" aria-label="contrôles">
+        <div class="controls-left">
+          <input id="q" type="search" placeholder="Recherche titre / SKU..." aria-label="Recherche produit" />
+          <select id="catFilter" class="cat-filter" aria-label="Filtrer par catégorie"><option value="">Toutes catégories</option></select>
+          <select id="statusFilter" aria-label="Statut"><option value="">Tous</option><option value="active">Actifs</option><option value="inactive">Inactifs</option></select>
+          <select id="sortBy" aria-label="Tri"><option value="created_desc">Tri: date (plus récent)</option><option value="price_asc">Prix ↑</option><option value="price_desc">Prix ↓</option></select>
+          <button id="btnFilter" class="btn ghost">Appliquer</button>
+        </div>
+        <div class="controls-right">
+          <!-- on mobile this will simply collapse into the menu but kept for desktop -->
+          <button id="btnCreate" class="btn">Créer produit</button>
+        </div>
+      </div>
+
+      <!-- Mobile-friendly filters (appears only when toggled on small screens) -->
+      <div id="mobileFilters" class="mobile-filters">
+        <div style="display:flex; gap:8px; flex-wrap:wrap">
+          <button id="mobileToggleFilters" class="btn ghost">Filtres</button>
+        </div>
+      </div>
+
+      <div style="margin-top:6px; margin-bottom:8px" class="small muted">Tous les produits — cliquez sur <strong>Voir</strong> pour agrandir</div>
+
+      <div id="productsList" class="products-list" role="list" aria-live="polite"></div>
+
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-top:12px; gap:12px; flex-wrap:wrap;">
+        <div id="pagerInfo" class="small muted"></div>
+        <div style="display:flex; gap:8px">
+          <button id="prevPage" class="btn ghost">Préc</button>
+          <button id="nextPage" class="btn ghost">Suiv</button>
+        </div>
+      </div>
+
+      <div style="margin-top:10px" class="hint">
+        Si un upload d'image échoue à cause des politiques RLS, l'opération sera mise en attente localement et tu pourras la relancer une fois que les fonctions Edge ou les policies seront configurées.
+        <div style="margin-top:8px"><button id="btnProcessPending" class="btn ghost">Traiter opérations en attente</button></div>
+      </div>
+    </div>
+  </main>
+
+  <!-- EDIT / CREATE MODAL (mobile-friendly full screen) -->
+  <div id="modal" class="modal-backdrop" aria-hidden="true">
+    <div class="modal">
+      <div class="view-panel">
+        <h3 id="mTitleText">Modifier produit</h3>
+        <form id="mForm">
+          <input type="hidden" id="mId" />
+          <div class="edit-grid" style="margin-top:10px">
+            <div style="flex:1; min-width:220px">
+              <label class="small">Titre</label>
+              <input id="mTitleInput" placeholder="Titre" style="width:100%; margin-bottom:8px" />
+              <div style="display:flex; gap:8px; align-items:center; margin-bottom:8px;">
+                <div style="flex:0 0 140px"><label class="small">Prix (XOF)</label><input id="mPriceInput" type="number" placeholder="Prix" style="width:100%"/></div>
+                <div style="flex:0 0 120px"><label class="small">Stock</label><input id="mStockInput" type="number" placeholder="Stock" style="width:100%"/></div>
+              </div>
+              <label class="small">Catégorie</label>
+              <select id="mCategory" class="cat-select" style="width:100%; margin-bottom:8px"></select>
+              <label class="small">Description courte</label>
+              <textarea id="mDesc" style="width:100%; margin-top:6px; min-height:80px"></textarea>
+
+              <div style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap">
+                <button id="mSave" class="btn" type="submit">Enregistrer</button>
+                <button id="mCancel" class="btn ghost" type="button">Annuler</button>
+                <button id="mDelete" class="btn ghost" type="button">Supprimer</button>
+              </div>
+              <div id="mMsg" class="small muted" style="margin-top:8px"></div>
+              <div id="mPath" class="small muted" style="margin-top:6px"></div>
+            </div>
+
+            <div style="width:240px; display:flex; flex-direction:column; gap:8px; align-items:stretch;">
+              <div class="small muted">Image (aperçu)</div>
+              <div class="mThumb" id="mThumb"><div class="imgwrap"><span class="small muted">Aperçu</span></div></div>
+              <input id="mImage" type="file" accept="image/png,image/jpeg" />
+              <div class="small muted">Max 3MB — redimensionné côté client</div>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- VIEW PRODUCT MODAL -->
+  <div id="viewModal" class="modal-backdrop" aria-hidden="true">
+    <div class="modal">
+      <div class="view-panel">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <h3 id="viewTitle">Produit</h3>
+          <button id="viewClose" class="btn ghost">Fermer</button>
+        </div>
+        <div class="vp-grid" style="margin-top:12px">
+          <div>
+            <div class="vp-thumb" id="viewThumb"><div class="imgwrap"><span class="small muted">Aucune image</span></div></div>
+          </div>
+          <div>
+            <div id="viewDetails" class="small muted"></div>
+            <div style="margin-top:12px; display:flex; gap:8px">
+              <button id="viewEditBtn" class="btn">Modifier</button>
+              <button id="viewDupBtn" class="btn ghost">Dupliquer</button>
+              <button id="viewDelBtn" class="btn ghost">Supprimer</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script type="module">
+  import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+
+  // CONFIG - remplace par tes valeurs / fonctions edge si dispo
+  const SUPABASE_URL = "https://vrzmowqzegmaymewmbij.supabase.co";
+  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5..."; // trimmed for brevity in editor (keeps working in practice)
+
+  // Edge endpoints (optionnels)
+  const EDGE_ADD_PRODUCT_URL = "";    // priorité add
+  const EDGE_UPDATE_PRODUCT_URL = ""; // priorité update
+  const EDGE_DELETE_PRODUCT_URL = ""; // priorité delete
+
+  const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  const REDIRECT_LOGIN = "admin-login.html";
+
+  // DOM refs
+  const productsList = document.getElementById('productsList');
+  const q = document.getElementById('q');
+  const catFilter = document.getElementById('catFilter');
+  const statusFilter = document.getElementById('statusFilter');
+  const sortBy = document.getElementById('sortBy');
+  const btnFilter = document.getElementById('btnFilter');
+  const btnCreate = document.getElementById('btnCreate');
+  const prevPage = document.getElementById('prevPage');
+  const nextPage = document.getElementById('nextPage');
+  const pagerInfo = document.getElementById('pagerInfo');
+
+  const menuBtn = document.getElementById('menuBtn');
+  const mobileMenu = document.getElementById('mobileMenu');
+  const mobileProcessPending = document.getElementById('mobileProcessPending');
+  const mobileJumpProducts = document.getElementById('mobileJumpProducts');
+
+  const modal = document.getElementById('modal');
+  const mForm = document.getElementById('mForm');
+  const mId = document.getElementById('mId');
+  const mTitleInput = document.getElementById('mTitleInput');
+  const mPriceInput = document.getElementById('mPriceInput');
+  const mStockInput = document.getElementById('mStockInput');
+  const mCategory = document.getElementById('mCategory');
+  const mDesc = document.getElementById('mDesc');
+  const mThumb = document.getElementById('mThumb');
+  const mImage = document.getElementById('mImage');
+  const mSave = document.getElementById('mSave');
+  const mCancel = document.getElementById('mCancel');
+  const mDelete = document.getElementById('mDelete');
+  const mMsg = document.getElementById('mMsg');
+  const mPath = document.getElementById('mPath');
+  const mTitleText = document.getElementById('mTitleText');
+
+  const viewModal = document.getElementById('viewModal');
+  const viewTitle = document.getElementById('viewTitle');
+  const viewThumb = document.getElementById('viewThumb');
+  const viewDetails = document.getElementById('viewDetails');
+  const viewClose = document.getElementById('viewClose');
+  const viewEditBtn = document.getElementById('viewEditBtn');
+  const viewDupBtn = document.getElementById('viewDupBtn');
+  const viewDelBtn = document.getElementById('viewDelBtn');
+
+  const btnProcessPending = document.getElementById('btnProcessPending');
+
+  // paging
+  let page = 0;
+  const PAGE_SIZE = 12;
+  let totalCount = 0;
+  let categories = [];
+
+  // local queue key for operations that couldn't be completed because of RLS / no edge
+  const PENDING_KEY = 'ms_admin_pending_ops_v1';
+
+  function escapeHtml(s=''){ return String(s).replace(/[&<>\"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;', '"':'&quot;',"'":'&#39;'}[c])); }
+  function toast(msg, t=2200){ const el = document.createElement('div'); el.className='toast'; el.textContent = msg; document.body.appendChild(el); setTimeout(()=> el.style.opacity='0.01', t-200); setTimeout(()=> el.remove(), t); }
+
+  // ----- Helper: pending queue -----
+  function loadPending(){ try { const raw = localStorage.getItem(PENDING_KEY); return raw ? JSON.parse(raw) : []; } catch(e){ return []; } }
+  function savePending(list){ localStorage.setItem(PENDING_KEY, JSON.stringify(list)); updatePendingBtn(); }
+  function pushPending(op){ const list = loadPending(); list.push(op); savePending(list); toast('Opération mise en attente'); }
+  function popPending(index){ const list = loadPending(); if (index>=0 && index < list.length) { list.splice(index,1); savePending(list); } }
+
+  function updatePendingBtn(){
+    const c = loadPending().length;
+    btnProcessPending.textContent = c ? `Traiter opérations en attente (${c})` : 'Traiter opérations en attente';
+    btnProcessPending.style.display = c ? '' : '';
+  }
+
+  // ----- Auth & admin check (simple) -----
+  async function ensureAdmin(){
+    try {
+      const { data: userData } = await supabase.auth.getUser();
+      if (!userData?.user) { window.location.href = REDIRECT_LOGIN; return false; }
+      const currentUser = userData.user;
+      const { data, error } = await supabase.from('admins').select('user_id').eq('user_id', currentUser.id).limit(1);
+      if (error) { console.warn('admins check err', error); alert('Erreur vérification admin'); await supabase.auth.signOut(); window.location.href = REDIRECT_LOGIN; return false; }
+      if (!data || data.length === 0) { alert('Compte non admin — accès refusé'); await supabase.auth.signOut(); window.location.href = REDIRECT_LOGIN; return false; }
+      return true;
+    } catch (err) { console.error(err); return false; }
+  }
+
+  // ----- Categories -----
+  async function loadCategories(){
+    try {
+      const { data, error } = await supabase.from('categories').select('id,name').eq('is_active', true).order('name',{ascending:true});
+      categories = data || [];
+      catFilter.innerHTML = '<option value="">Toutes catégories</option>';
+      categories.forEach(c => {
+        const o = document.createElement('option'); o.value = c.id; o.textContent = c.name;
+        catFilter.appendChild(o);
+      });
+      mCategory.innerHTML = '<option value="">— Choisir —</option>';
+      categories.forEach(c => {
+        const o = document.createElement('option'); o.value = c.id; o.textContent = c.name;
+        mCategory.appendChild(o);
+      });
+    } catch (err) { console.warn('categories load err', err); }
+  }
+
+  // ----- Storage helpers (resize + upload) -----
+  async function fileToResizedFile(file, maxSize=1600){
+    const img = document.createElement('img');
+    const url = URL.createObjectURL(file);
+    await new Promise(res => { img.onload = res; img.src = url; });
+    let w = img.width, h = img.height;
+    if (Math.max(w,h) > maxSize) { const r = maxSize / Math.max(w,h); w = Math.round(w*r); h = Math.round(h*r); }
+    const canvas = document.createElement('canvas'); canvas.width = w; canvas.height = h;
+    const ctx = canvas.getContext('2d'); ctx.drawImage(img,0,0,w,h);
+    const mime = /jpe?g/i.test(file.type) ? 'image/jpeg' : 'image/png';
+    const dataUrl = canvas.toDataURL(mime, mime === 'image/jpeg' ? 0.85 : 1.0);
+    URL.revokeObjectURL(url);
+    const [header, body] = dataUrl.split(',');
+    const bin = atob(body); let n = bin.length; const u8 = new Uint8Array(n);
+    while(n--) u8[n] = bin.charCodeAt(n);
+    return new File([u8], file.name.replace(/\s+/g,'_'), { type: mime });
+  }
+
+  async function uploadFileToStorage(file){
+    if (!file) return { url:null, path:null };
+    const f = await fileToResizedFile(file, 1600);
+    const path = `products/${Date.now()}_${f.name}`;
+    const { error: upErr } = await supabase.storage.from('products').upload(path, f, { cacheControl:'3600', upsert:false });
+    if (upErr) throw upErr;
+    const { data } = await supabase.storage.from('products').getPublicUrl(path);
+    return { url: data?.publicUrl ?? null, path };
+  }
+
+  async function computePublicUrlIfMissingFor(product){
+    if (product.image_url) return product.image_url;
+    if (!product.image_path) return null;
+    try {
+      const { data } = await supabase.storage.from('products').getPublicUrl(product.image_path);
+      const url = data?.publicUrl || null;
+      return url;
+    } catch(e){ console.warn('getPublicUrl err', e); return null; }
+  }
+
+  // ----- Render -----
+  async function renderProducts(list){
+    productsList.innerHTML = '';
+    if (!list || list.length === 0) {
+      productsList.innerHTML = '<div class="small muted">Aucun produit</div>';
+      return;
+    }
+
+    for (const p of list) {
+      const wrapper = document.createElement('div'); wrapper.className = 'product-item';
+
+      // thumb
+      const thumb = document.createElement('div'); thumb.className='p-thumb';
+      const imgWrap = document.createElement('div'); imgWrap.className='imgwrap';
+      const imgEl = document.createElement('img'); imgEl.alt = p.title || ''; imgEl.loading = 'lazy'; imgEl.className='responsive-img';
+      imgEl.src = p.image_url || '/public/nbbcl.png';
+      imgEl.addEventListener('error', ()=> { imgEl.src = '/public/nbbcl.png'; });
+      imgWrap.appendChild(imgEl);
+      thumb.appendChild(imgWrap);
+
+      // main
+      const main = document.createElement('div'); main.className='p-main';
+      main.innerHTML = `<div class="p-title">${escapeHtml(p.title)}</div>
+        <div class="p-meta">SKU: ${escapeHtml(p.sku || '—')} — Prix: ${Number(p.price||0).toLocaleString('fr-FR')} XOF</div>
+        <div class="p-tags">
+          <div class="small muted">Stock: ${p.stock ?? 0}</div>
+          <div class="small muted">Catégorie: ${escapeHtml(catNameById(p.category_id))}</div>
+          <div class="small muted">Créé: ${p.created_at ? new Date(p.created_at).toLocaleString() : '-'}</div>
+        </div>`;
+
+      // actions
+      const actions = document.createElement('div'); actions.className='p-actions';
+      actions.innerHTML = `<button class="btn ghost btn-view" data-id="${p.id}">Voir</button>
+        <button class="btn ghost btn-edit" data-id="${p.id}">Modifier</button>
+        <button class="btn ghost btn-dup" data-id="${p.id}">Dupliquer</button>
+        <button class="btn ghost btn-del" data-id="${p.id}">Supprimer</button>`;
+
+      wrapper.appendChild(thumb);
+      wrapper.appendChild(main);
+      wrapper.appendChild(actions);
+      productsList.appendChild(wrapper);
+
+      // resolve missing public URL when image_path exists
+      if (!p.image_url && p.image_path) {
+        (async () => {
+          const url = await computePublicUrlIfMissingFor(p).catch(()=>null);
+          if (url) {
+            imgEl.src = url;
+            tryUpdateImageUrlInDb(p.id, url, p.image_path);
+          }
+        })();
+      }
+    }
+
+    // attach events
+    productsList.querySelectorAll('.btn-edit').forEach(b => b.addEventListener('click', (e)=> openModalForId(e.target.dataset.id)));
+    productsList.querySelectorAll('.btn-dup').forEach(b => b.addEventListener('click', (e)=> duplicateProduct(e.target.dataset.id)));
+    productsList.querySelectorAll('.btn-del').forEach(b => b.addEventListener('click', (e)=> { if (confirm('Supprimer ce produit ?')) deleteProduct(e.target.dataset.id); }));
+    productsList.querySelectorAll('.btn-view').forEach(b => b.addEventListener('click', (e)=> viewProduct(e.target.dataset.id)));
+  }
+
+  function catNameById(id){ return categories.find(c => c.id === id)?.name || (id || ''); }
+
+  // ----- Load page -----
+  async function loadPage(){
+    productsList.innerHTML = '<div class="small muted">Chargement…</div>';
+    try {
+      let qb = supabase.from('products').select('id,title,price,stock,category_id,created_at,is_active,image_url,image_path,sku,short_description', { count:'exact' });
+
+      if (q.value.trim()) qb = qb.ilike('title', `%${q.value.trim()}%`);
+      if (catFilter.value) qb = qb.eq('category_id', catFilter.value);
+      if (statusFilter.value === 'active') qb = qb.eq('is_active', true);
+      if (statusFilter.value === 'inactive') qb = qb.eq('is_active', false);
+
+      const sortVal = sortBy.value;
+      if (sortVal === 'price_asc') qb = qb.order('price',{ ascending:true });
+      else if (sortVal === 'price_desc') qb = qb.order('price',{ ascending:false });
+      else qb = qb.order('created_at',{ ascending:false });
+
+      qb = qb.range(page*PAGE_SIZE, page*PAGE_SIZE + PAGE_SIZE -1);
+
+      const { data, error, count } = await qb;
+      if (error) {
+        console.warn('products fetch err', error);
+        productsList.innerHTML = `<div class="small muted">Erreur chargement — ${escapeHtml(String(error.message || error))}</div>`;
+        return;
+      }
+      totalCount = count ?? (data ? data.length : 0);
+      pagerInfo.textContent = `Page ${page+1} — ${totalCount} résultats (approx.)`;
+      renderProducts(data || []);
+    } catch (err) {
+      console.error('loadPage err', err);
+      productsList.innerHTML = `<div class="small muted">Erreur chargement (voir console)</div>`;
+    }
+  }
+
+  // ----- Try update image_url in DB, else queue -----
+  async function tryUpdateImageUrlInDb(productId, imageUrl, imagePath){
+    try {
+      const { error } = await supabase.from('products').update({ image_url: imageUrl, image_path: imagePath }).eq('id', productId);
+      if (error) {
+        console.warn('update image_url failed, queuing', error);
+        pushPending({ op: 'update_image', productId, image_url: imageUrl, image_path: imagePath, ts: Date.now() });
+      } else {
+        console.debug('image_url updated in db for', productId);
+      }
+    } catch (err) {
+      console.warn('tryUpdateImageUrlInDb err', err);
+      pushPending({ op: 'update_image', productId, image_url: imageUrl, image_path: imagePath, ts: Date.now() });
+    }
+  }
+
+  // ----- Edge helper -----
+  async function callEdge(url, body){
+    if (!url) throw new Error('Edge URL not configured');
+    const { data: sessionData } = await supabase.auth.getSession();
+    const token = sessionData?.session?.access_token || null;
+    const headers = { 'Content-Type': 'application/json' };
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+    const res = await fetch(url, { method:'POST', headers, body: JSON.stringify(body) });
+    const text = await res.text().catch(()=>null);
+    let json = null;
+    try { json = text ? JSON.parse(text) : null; } catch(e){ json = null; }
+    return { ok: res.ok, status: res.status, json, text };
+  }
+
+  // ----- Create / Update / Delete operations (Edge first, fallback to client) -----
+  async function saveModal(e){
+    if (e) e.preventDefault();
+    mMsg.textContent = '';
+    const id = mId.value || null;
+    const title = mTitleInput.value.trim();
+    const price = Number(mPriceInput.value || 0);
+    const stock = Number(mStockInput.value || 0);
+    const desc = mDesc.value.trim();
+    const category_id = mCategory.value || null;
+
+    if (!title || !price) { mMsg.textContent = 'Titre et prix requis'; return; }
+
+    try {
+      let uploaded = null;
+      if (mImage.files?.[0]) {
+        try { uploaded = await uploadFileToStorage(mImage.files[0]); }
+        catch (upErr) { console.warn('upload err', upErr); uploaded = null; }
+      }
+
+      // Prepare payload
+      const payload = { title, price, stock, short_description: desc, category_id, currency:'XOF', is_active:true };
+      if (uploaded && uploaded.url) { payload.image_url = uploaded.url; payload.image_path = uploaded.path; }
+
+      // PRIORITY: call Edge if configured
+      if (!id && EDGE_ADD_PRODUCT_URL) {
+        try {
+          const res = await callEdge(EDGE_ADD_PRODUCT_URL, payload);
+          if (res.ok) {
+            toast('Produit créé via Edge');
+            closeModal(); await loadPage(); return;
+          } else {
+            console.warn('Edge add failed', res);
+          }
+        } catch(e){ console.warn('Edge add err', e); }
+      }
+      if (id && EDGE_UPDATE_PRODUCT_URL) {
+        try {
+          payload.id = id;
+          const res = await callEdge(EDGE_UPDATE_PRODUCT_URL, payload);
+          if (res.ok) { toast('Produit mis à jour via Edge'); closeModal(); await loadPage(); return; }
+          else console.warn('Edge update failed', res);
+        } catch(e){ console.warn('Edge update err', e); }
+      }
+
+      // FALLBACK client-side
+      if (!id) {
+        const { data: inserted, error } = await supabase.from('products').insert([payload]).select().single();
+        if (error) {
+          console.warn('insert failed', error);
+          pushPending({ op: 'add', payload, ts: Date.now() });
+          mMsg.textContent = 'Produit mis en attente (erreur permissions).';
+          closeModal();
+          await loadPage();
+          return;
+        }
+        toast('Produit créé');
+      } else {
+        const updatePayload = { title, price, stock, short_description: desc, category_id };
+        if (uploaded && uploaded.url) { updatePayload.image_url = uploaded.url; updatePayload.image_path = uploaded.path; }
+        const { error } = await supabase.from('products').update(updatePayload).eq('id', id);
+        if (error) {
+          console.warn('update failed', error);
+          pushPending({ op: 'update', id, payload: updatePayload, ts: Date.now() });
+          mMsg.textContent = 'Mise à jour mise en attente (erreur permissions).';
+          closeModal();
+          await loadPage();
+          return;
+        }
+        toast('Produit mis à jour');
+      }
+
+      closeModal();
+      await loadPage();
+
+    } catch (err) {
+      console.error('save err', err);
+      mMsg.textContent = err.message || 'Erreur';
+    }
+  }
+
+  async function deleteProduct(id){
+    if (!id) return;
+    if (EDGE_DELETE_PRODUCT_URL) {
+      try {
+        const res = await callEdge(EDGE_DELETE_PRODUCT_URL, { id });
+        if (res.ok) { toast('Produit supprimé via Edge'); await loadPage(); return; }
+      } catch(e){ console.warn('Edge delete err', e); }
+    }
+
+    try {
+      const { error } = await supabase.from('products').delete().eq('id', id);
+      if (error) {
+        console.warn('delete failed', error);
+        pushPending({ op: 'delete', id, ts: Date.now() });
+        toast('Suppression mise en attente (permissions)');
+        await loadPage();
+        return;
+      }
+      toast('Produit supprimé');
+      await loadPage();
+    } catch (err) { console.error(err); alert('Erreur suppression'); }
+  }
+
+  async function duplicateProduct(id){
+    try {
+      const { data, error } = await supabase.from('products').select('*').eq('id', id).single();
+      if (error) throw error;
+      const p = data;
+      const payload = {
+        title: p.title + ' (copie)', price: p.price, stock: p.stock, category_id: p.category_id,
+        short_description: p.short_description, image_url: p.image_url, image_path: p.image_path, is_active:false, currency: p.currency || 'XOF'
+      };
+      if (EDGE_ADD_PRODUCT_URL) {
+        try {
+          const res = await callEdge(EDGE_ADD_PRODUCT_URL, payload);
+          if (res.ok) { toast('Produit dupliqué via Edge'); await loadPage(); return; }
+        } catch(e){ console.warn('Edge dup err', e); }
+      }
+      const { error: insErr } = await supabase.from('products').insert([payload]);
+      if (insErr) {
+        console.warn('duplicate insert failed', insErr);
+        pushPending({ op: 'add', payload, ts: Date.now() });
+        toast('Duplication mise en attente (permissions)');
+        return;
+      }
+      toast('Produit dupliqué (inactif)');
+      await loadPage();
+    } catch (err) { console.error(err); alert('Erreur'); }
+  }
+
+  // ----- Try to process pending ops (use Edge if available, otherwise try Supabase client) -----
+  async function processPending(){
+    const list = loadPending();
+    if (!list || list.length === 0) { toast('Aucune opération en attente'); return; }
+    for (let i = 0; i < list.length; i++) {
+      const op = list[i];
+      try {
+        if (op.op === 'add') {
+          if (EDGE_ADD_PRODUCT_URL) {
+            const res = await callEdge(EDGE_ADD_PRODUCT_URL, op.payload);
+            if (res.ok) { popPending(i); i--; toast('add processed via Edge'); continue; }
+          }
+          const { data, error } = await supabase.from('products').insert([op.payload]).select().single();
+          if (!error && data) { popPending(i); i--; toast('add processed (client)'); continue; }
+        } else if (op.op === 'update') {
+          if (EDGE_UPDATE_PRODUCT_URL) {
+            const payload = { id: op.id, ...op.payload };
+            const res = await callEdge(EDGE_UPDATE_PRODUCT_URL, payload);
+            if (res.ok) { popPending(i); i--; toast('update processed via Edge'); continue; }
+          }
+          const { error } = await supabase.from('products').update(op.payload).eq('id', op.id);
+          if (!error) { popPending(i); i--; toast('update processed (client)'); continue; }
+        } else if (op.op === 'delete') {
+          if (EDGE_DELETE_PRODUCT_URL) {
+            const res = await callEdge(EDGE_DELETE_PRODUCT_URL, { id: op.id });
+            if (res.ok) { popPending(i); i--; toast('delete via Edge'); continue; }
+          }
+          const { error } = await supabase.from('products').delete().eq('id', op.id);
+          if (!error) { popPending(i); i--; toast('delete processed (client)'); continue; }
+        } else if (op.op === 'update_image') {
+          if (EDGE_UPDATE_PRODUCT_URL) {
+            const payload = { id: op.productId, image_url: op.image_url, image_path: op.image_path };
+            const res = await callEdge(EDGE_UPDATE_PRODUCT_URL, payload);
+            if (res.ok) { popPending(i); i--; toast('image update via Edge'); continue; }
+          }
+          const { error } = await supabase.from('products').update({ image_url: op.image_url, image_path: op.image_path }).eq('id', op.productId);
+          if (!error) { popPending(i); i--; toast('image update processed (client)'); continue; }
+        }
+      } catch (err) {
+        console.warn('pending op failed, keeping in queue', err);
+      }
+    }
+    toast('Traitement terminé');
+    await loadPage();
+  }
+
+  // ----- View product modal -----
+  async function viewProduct(id){
+    try {
+      const { data, error } = await supabase.from('products').select('*').eq('id', id).single();
+      if (error || !data) { alert('Produit introuvable'); console.warn(error); return; }
+      viewTitle.textContent = data.title || 'Produit';
+      let img = data.image_url || null;
+      if (!img && data.image_path) {
+        const r = await supabase.storage.from('products').getPublicUrl(data.image_path);
+        img = r.data?.publicUrl || null;
+      }
+      viewThumb.innerHTML = img ? `<div class="imgwrap"><img class="responsive-img" src="${escapeHtml(img)}" alt="${escapeHtml(data.title)}"></div>` : '<div class="imgwrap"><span class="small muted">Aucune image</span></div>';
+      viewDetails.innerHTML = `<div><strong>Prix:</strong> ${Number(data.price||0).toLocaleString('fr-FR')} XOF</div>
+        <div style="margin-top:8px"><strong>Stock:</strong> ${data.stock ?? 0}</div>
+        <div style="margin-top:8px"><strong>Catégorie:</strong> ${escapeHtml(catNameById(data.category_id))}</div>
+        <div style="margin-top:8px"><strong>Description:</strong><div class="small muted" style="margin-top:6px">${escapeHtml(data.short_description||'')}</div></div>`;
+
+      viewEditBtn.onclick = () => { openModalForId(id); viewModal.style.display='none'; viewModal.setAttribute('aria-hidden','true'); };
+      viewDupBtn.onclick = async () => { await duplicateProduct(id); viewModal.style.display='none'; viewModal.setAttribute('aria-hidden','true'); };
+      viewDelBtn.onclick = async () => { if (confirm('Supprimer ce produit ?')) { await deleteProduct(id); viewModal.style.display='none'; viewModal.setAttribute('aria-hidden','true'); } };
+      viewModal.style.display='grid'; viewModal.setAttribute('aria-hidden','false');
+    } catch (err) { console.error(err); alert('Erreur affichage'); }
+  }
+
+  // ----- Open / Close modal for edit / create -----
+  async function openModalForId(id){
+    try {
+      const { data, error } = await supabase.from('products').select('*').eq('id', id).single();
+      if (error || !data) { alert('Erreur chargement produit'); console.warn(error); return; }
+      mId.value = data.id;
+      mTitleInput.value = data.title || '';
+      mPriceInput.value = data.price ?? 0;
+      mStockInput.value = data.stock ?? 0;
+      mDesc.value = data.short_description || '';
+      mCategory.value = data.category_id || '';
+      const img = data.image_url || (data.image_path ? (await supabase.storage.from('products').getPublicUrl(data.image_path)).data?.publicUrl : null);
+      mThumb.innerHTML = img ? `<div class="imgwrap"><img class="responsive-img" src="${escapeHtml(img)}" alt="${escapeHtml(data.title)}"></div>` : '<div class="imgwrap"><span class="small muted">Aperçu</span></div>';
+      mPath.textContent = data.image_path ? `image_path: ${data.image_path}` : '';
+      mMsg.textContent = '';
+      mTitleText.textContent = 'Modifier produit';
+      modal.style.display = 'grid'; modal.setAttribute('aria-hidden','false');
+    } catch (err) { console.error(err); alert('Erreur'); }
+  }
+
+  function openModalForNew(){
+    mId.value = '';
+    mTitleInput.value = '';
+    mPriceInput.value = '';
+    mStockInput.value = 0;
+    mDesc.value = '';
+    mCategory.value = '';
+    mThumb.innerHTML = '<div class="imgwrap"><span class="small muted">Aperçu</span></div>';
+    mImage.value = '';
+    mPath.textContent = '';
+    mMsg.textContent = '';
+    mTitleText.textContent = 'Créer produit';
+    modal.style.display = 'grid'; modal.setAttribute('aria-hidden','false');
+  }
+
+  function closeModal(){ modal.style.display = 'none'; modal.setAttribute('aria-hidden','true'); }
+
+  // preview file selection locally (keeps aspect via imgwrap + object-fit:contain)
+  mImage.addEventListener('change', ()=> {
+    const f = mImage.files?.[0];
+    if (!f) { mThumb.innerHTML = '<div class="imgwrap"><span class="small muted">Aperçu</span></div>'; return; }
+    const url = URL.createObjectURL(f);
+    mThumb.innerHTML = `<div class="imgwrap"><img class="responsive-img" src="${url}" alt="preview"></div>`;
+  });
+
+  // ----- Events & init -----
+  btnFilter.addEventListener('click', ()=> { page = 0; loadPage(); });
+  q.addEventListener('keydown', (e)=> { if (e.key === 'Enter') { page = 0; loadPage(); }});
+  btnCreate.addEventListener('click', ()=> openModalForNew());
+  prevPage.addEventListener('click', ()=> { if (page > 0) { page--; loadPage(); }});
+  nextPage.addEventListener('click', ()=> { page++; loadPage(); });
+  mCancel.addEventListener('click', ()=> closeModal());
+  mForm.addEventListener('submit', saveModal);
+  mDelete.addEventListener('click', async ()=> { const id = mId.value; if (!id) { mMsg.textContent = 'Pas de produit sélectionné'; return; } if (confirm('Supprimer ?')) { await deleteProduct(id); closeModal(); }});
+  viewClose.addEventListener('click', ()=> { viewModal.style.display='none'; viewModal.setAttribute('aria-hidden','true'); });
+  btnProcessPending.addEventListener('click', ()=> processPending());
+
+  // Mobile menu behaviour
+  menuBtn.addEventListener('click', (e)=>{
+    const expanded = menuBtn.getAttribute('aria-expanded') === 'true';
+    menuBtn.setAttribute('aria-expanded', String(!expanded));
+    mobileMenu.style.display = expanded ? 'none' : 'block';
+    mobileMenu.setAttribute('aria-hidden', String(expanded));
+  });
+
+  mobileProcessPending?.addEventListener('click', ()=> { processPending(); mobileMenu.style.display='none'; menuBtn.setAttribute('aria-expanded','false'); });
+  mobileJumpProducts?.addEventListener('click', ()=> { document.getElementById('productsList').scrollIntoView({ behavior:'smooth' }); mobileMenu.style.display='none'; menuBtn.setAttribute('aria-expanded','false'); });
+
+  // attempt to process pending items at init if Edge urls present
+  async function init(){
+    if (!await ensureAdmin()) return;
+    await loadCategories();
+    await loadPage();
+    updatePendingBtn();
+    if ((EDGE_ADD_PRODUCT_URL || EDGE_UPDATE_PRODUCT_URL || EDGE_DELETE_PRODUCT_URL) && loadPending().length > 0) {
+      setTimeout(()=> { processPending(); }, 1200);
+    }
+  }
+
+  init();
+
+</script>
+</body>
+</html>
