@@ -30,20 +30,37 @@
 
     /* Top nav */
     header{ background:var(--nav-bg); color:white; box-shadow:0 6px 18px rgba(2,6,23,0.08); position:sticky; top:0; z-index:90; }
-    .header-inner{ display:flex; gap:12px; align-items:center; max-width:var(--max-width); margin:0 auto; padding:8px 18px; height:var(--header-height); }
-    .brand-wrap{ display:flex; align-items:center; gap:12px }
-    .mark{ width:44px; height:44px; border-radius:10px; display:grid; place-items:center; background:linear-gradient(135deg,var(--accent-blue),var(--accent-green)); color:white; font-weight:900 }
-    nav.main{ margin-left:12px; display:flex; gap:12px; align-items:center; }
-    nav.main a{ color:rgba(255,255,255,0.95); padding:8px 10px; border-radius:8px; font-weight:600 }
+    .header-inner{ display:flex; gap:12px; align-items:center; max-width:var(--max-width); margin:0 auto; padding:8px 18px; height:var(--header-height); align-items:center; }
+    .brand-wrap{ display:flex; align-items:center; gap:12px; min-width:0; }
+    .mark{ width:44px; height:44px; border-radius:10px; display:grid; place-items:center; background:linear-gradient(135deg,var(--accent-blue),var(--accent-green)); color:white; font-weight:900; flex-shrink:0; }
+    nav.main{ margin-left:12px; display:flex; gap:12px; align-items:center; flex-wrap:wrap; }
+    nav.main a{ color:rgba(255,255,255,0.95); padding:8px 10px; border-radius:8px; font-weight:600; white-space:nowrap; }
     nav.main a:hover{ background:rgba(255,255,255,0.04) }
 
-    .nav-actions{ margin-left:auto; display:flex; gap:12px; align-items:center }
-    .search-box input{ padding:8px 10px; border-radius:8px; border:0; width:220px; background:rgba(255,255,255,0.12); color:white; outline:none }
+    .nav-actions{ margin-left:auto; display:flex; gap:12px; align-items:center; min-width:0; }
+
+    .search-box{ display:flex; gap:8px; align-items:center; min-width:0; }
+    .search-box input{ padding:8px 10px; border-radius:8px; border:0; width:220px; background:rgba(255,255,255,0.12); color:white; outline:none; min-width:0; }
     .search-box input::placeholder{ color:rgba(255,255,255,0.8) }
 
     /* burger mobile */
     .nav-toggle{ display:none; background:transparent; border:0; color:white; font-size:22px; padding:8px; border-radius:8px; cursor:pointer }
-    .mobile-nav{ display:none; position:absolute; top:var(--header-height); left:0; right:0; background:linear-gradient(180deg,var(--nav-bg),#06304f); padding:12px; box-shadow:0 8px 30px rgba(2,8,23,0.2); z-index:95; }
+    /* Modified: centered, not full-width mobile nav */
+    .mobile-nav{
+      display:none;
+      position:fixed;
+      top:calc(var(--header-height) + 10px);
+      left:12px;
+      right:12px;
+      max-width:640px;
+      margin:0 auto;
+      background:linear-gradient(180deg,var(--nav-bg),#06304f);
+      padding:16px;
+      border-radius:12px;
+      box-shadow:0 20px 60px rgba(2,8,23,0.28);
+      z-index:995;
+      border:1px solid rgba(255,255,255,0.04);
+    }
     .mobile-nav a{ display:block; padding:10px 12px; border-radius:8px; color:white; font-weight:700; margin-bottom:6px }
     .mobile-actions{ display:flex; gap:8px; margin-top:8px; }
 
@@ -112,6 +129,10 @@
     .btn.ghost{ background:transparent; border:1px solid var(--panel-border); color:var(--text) }
     .btn-buy{ background:linear-gradient(135deg,var(--accent-green),var(--accent-green-2)); color:#042c1f; padding:10px 12px; border-radius:8px; border:0; font-weight:800; cursor:pointer }
 
+    /* spinner (small) */
+    .spinner { display:inline-block; width:16px; height:16px; border:2px solid rgba(0,0,0,0.12); border-top-color: rgba(255,255,255,0.95); border-radius:50%; animation:spin 0.9s linear infinite; vertical-align:middle; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
     /* load more */
     .load-more-wrap{ display:flex; justify-content:center; margin:18px 0 48px; }
     .small{ font-size:13px; color:var(--muted) }
@@ -157,6 +178,7 @@
       .preview-large{ height:320px; }
       .modal{ margin:6px; padding:12px; max-width:980px; }
       .modal-backdrop{ align-items:start; padding-top:12px; }
+      .search-box input { display:inline-block; width:120px; }
     }
 
     /* small accessibility focus */
@@ -165,13 +187,18 @@
 </head>
 <body>
   <header>
-    <div class="header-inner">
-      <div class="brand-wrap" style="display:flex;align-items:center;gap:12px">
-        <div class="mark" aria-hidden="true">M+</div>
-        <div style="line-height:1">
-          <div style="font-weight:800; color:white">MedicalShop</div>
-          <div style="font-size:12px; color:rgba(255,255,255,0.9)">Produits</div>
-        </div>
+    <div class="header-inner container" style="align-items:center;">
+      <!-- Mobile: burger first, then logo, then nav (hidden on mobile), then search+cart on right -->
+      <button id="navToggle" class="nav-toggle" aria-expanded="false" aria-controls="mobileNav" title="Menu">☰</button>
+
+      <div class="brand-wrap" style="display:flex;align-items:center;gap:12px; min-width:0;">
+        <a href="/" style="display:flex;align-items:center;gap:10px; color:white; text-decoration:none; min-width:0;">
+          <div class="mark" aria-hidden="true">M+</div>
+          <div style="line-height:1; min-width:0; overflow:hidden;">
+            <div style="font-weight:800; color:white; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:160px;">MedicalShop</div>
+            <div style="font-size:12px; color:rgba(255,255,255,0.9); white-space:nowrap; overflow:hidden; text-overflow:ellipsis">Produits</div>
+          </div>
+        </a>
       </div>
 
       <nav class="main" aria-label="main nav">
@@ -179,19 +206,16 @@
         <a href="/products.html">Produits</a>
         <a href="/about.html">À propos</a>
         <a href="/contact.html">Contact</a>
+        <!-- Historique moved inside main nav -->
+        <a id="navHistory" href="#" style="margin-left:6px; font-weight:700">Historique</a>
       </nav>
 
-      <button id="navToggle" class="nav-toggle" aria-expanded="false" aria-controls="mobileNav" title="Menu">
-        ☰
-      </button>
-
-      <div class="nav-actions">
+      <div class="nav-actions" role="toolbar" aria-label="navigation actions">
         <div class="search-box" role="search" aria-label="Recherche produits">
           <input id="searchInput" placeholder="Rechercher : gants, seringues..." aria-label="Recherche" />
         </div>
 
-        <button id="btnHistory" class="btn" title="Historique">Historique</button>
-
+        <!-- cart button remains on the right -->
         <button id="cartBtn" class="cart-btn" title="Panier (0)" aria-haspopup="dialog" aria-controls="cartPanel">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" style="display:block"><path d="M3 3h2l.4 2M7 13h10l3-8H6.4" stroke="white" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
           <span id="cartCount" class="cart-badge" aria-live="polite" aria-atomic="true">0</span>
@@ -204,9 +228,9 @@
       <a href="/products.html">Produits</a>
       <a href="/about.html">À propos</a>
       <a href="/contact.html">Contact</a>
+      <a id="mobileHistory" href="#" style="display:block; padding:10px 12px; color:white; font-weight:700">Historique</a>
       <div class="mobile-actions">
         <div style="flex:1"><input id="mobileSearch" placeholder="Rechercher..." style="width:100%; padding:8px; border-radius:8px; border:1px solid rgba(255,255,255,0.06); background:rgba(255,255,255,0.06); color:white"></div>
-        <button id="mobileHistory" class="btn ghost" style="background:transparent; color:white">Histo</button>
       </div>
     </div>
   </header>
@@ -284,7 +308,6 @@
       </div>
     </div>
   </div>
-
   <!-- Buy modal (kept as before) -->
   <div id="buyModal" class="modal-backdrop" aria-hidden="true" role="dialog" aria-label="Modal commande">
     <div class="modal" role="document" aria-modal="true">
@@ -304,7 +327,10 @@
                 <div id="qtyDisplay" style="min-width:36px; text-align:center; font-weight:700">1</div>
                 <button type="button" id="qtyInc" class="btn">+</button>
               </div>
-              <button id="submitOrder" class="btn-buy" type="submit">Valider la commande</button>
+              <button id="submitOrder" class="btn-buy" type="submit">
+                <span id="submitLabel">Valider la commande</span>
+                <span id="submitSpinner" style="display:none; margin-left:8px;"><span class="spinner"></span></span>
+              </button>
               <button id="cancelBuy" class="btn ghost" type="button">Annuler</button>
             </div>
 
@@ -335,14 +361,12 @@
     </div>
   </div>
 
-  <!-- History modal -->
+  <!-- History modal (SEARCH & REFRESH REMOVED) -->
   <div id="historyModal" class="modal-backdrop" aria-hidden="true" role="dialog" aria-label="Historique">
     <div class="modal" role="document" aria-modal="true">
       <div style="display:flex; justify-content:space-between; align-items:center; gap:8px">
         <h3>Historique local</h3>
         <div style="display:flex; gap:8px; align-items:center">
-          <input id="histSearch" placeholder="Rechercher id ou nom client" style="padding:8px 10px; border-radius:8px; border:1px solid rgba(10,30,60,0.06)">
-          <button id="histRefresh" class="btn ghost">Rafraîchir</button>
           <button id="histClose" class="btn ghost">Fermer</button>
         </div>
       </div>
@@ -364,7 +388,10 @@
     const btnLoadMore = document.getElementById('btnLoadMore');
     const loadedCountEl = document.getElementById('loadedCount');
     const searchInput = document.getElementById('searchInput');
-    const btnHistory = document.getElementById('btnHistory');
+
+    // New: history link in nav
+    const navHistory = document.getElementById('navHistory');
+    const mobileHistory = document.getElementById('mobileHistory');
 
     const productModal = document.getElementById('productModal');
     const productLargePreview = document.getElementById('productLargePreview');
@@ -386,6 +413,8 @@
     const qtyDisplay = document.getElementById('qtyDisplay');
     const buySummary = document.getElementById('buySummary');
     const submitOrderBtn = document.getElementById('submitOrder');
+    const submitSpinner = document.getElementById('submitSpinner');
+    const submitLabel = document.getElementById('submitLabel');
     const cancelBuy = document.getElementById('cancelBuy');
     const buyMsg = document.getElementById('buyMsg');
 
@@ -400,13 +429,10 @@
     const historyModal = document.getElementById('historyModal');
     const histList = document.getElementById('histList');
     const histClose = document.getElementById('histClose');
-    const histSearch = document.getElementById('histSearch');
-    const histRefresh = document.getElementById('histRefresh');
 
     const navToggle = document.getElementById('navToggle');
     const mobileNav = document.getElementById('mobileNav');
     const mobileSearch = document.getElementById('mobileSearch');
-    const mobileHistory = document.getElementById('mobileHistory');
 
     // state
     const PAGE_SIZE = 50;
@@ -441,7 +467,6 @@
           document.querySelectorAll('.modal-backdrop').forEach(m => { if (m.style.display === 'grid') { m.style.display = 'none'; m.setAttribute('aria-hidden','true'); } });
           // close mobile nav if open
           if (mobileNav && mobileNav.style.display === 'block') toggleMobileNav(false);
-          // close cartPanel if open on mobile (optional)
           if (cartPanel && getComputedStyle(cartPanel).display === 'block' && window.innerWidth <= 720) cartPanel.style.display = 'none';
         }
       });
@@ -629,7 +654,7 @@
     function openBuyModalWithProduct(product){
       BUY_CONTEXT = { items: [{ productId: product.id, qty:1, title: product.title, price: Number(product.price||0), image_url: product.image_url || product.image_path || '/public/nbbcl.png' }], fromCart:false };
       populateBuySummary();
-      qtyDisplay.textContent = '1';
+      qtyDisplay.textContent = String(BUY_CONTEXT.items[0].qty || 1);
       showBuyModal(true);
     }
     function openBuyModalFromCart(){
@@ -637,6 +662,7 @@
       if (!cart || cart.length === 0) { alert('Panier vide'); return; }
       BUY_CONTEXT = { items: cart.map(i=>({ ...i })), fromCart:true };
       populateBuySummary();
+      // when buying from cart, qty controls operate only for single-item quick updates — keep display 1 (as original)
       qtyDisplay.textContent = '1';
       showBuyModal(true);
     }
@@ -653,11 +679,14 @@
       const total = items.reduce((s,i)=> s + (i.price||0)*(i.qty||0), 0);
       buySummary.innerHTML = `${lines}${lines ? '<hr style="border:none;border-top:1px solid rgba(10,30,60,0.06);margin:8px 0">' : ''}<div style="display:flex;justify-content:space-between"><strong>Total</strong><strong>${currencyFormat(total)} XOF</strong></div>`;
     }
+
+    // ---- FIXED: qty increment/decrement MUST update qtyDisplay and buySummary ----
     qtyDec.addEventListener('click', ()=> {
       if (!BUY_CONTEXT.items || BUY_CONTEXT.items.length === 0) return;
       if (BUY_CONTEXT.items.length === 1) {
         if (BUY_CONTEXT.items[0].qty <= 1) return;
         BUY_CONTEXT.items[0].qty -= 1;
+        qtyDisplay.textContent = String(BUY_CONTEXT.items[0].qty);
         populateBuySummary();
       }
     });
@@ -665,6 +694,7 @@
       if (!BUY_CONTEXT.items || BUY_CONTEXT.items.length === 0) return;
       if (BUY_CONTEXT.items.length === 1) {
         BUY_CONTEXT.items[0].qty += 1;
+        qtyDisplay.textContent = String(BUY_CONTEXT.items[0].qty);
         populateBuySummary();
       }
     });
@@ -682,7 +712,11 @@
       const items = (BUY_CONTEXT.items || []).map(it => ({ ...it }));
       if (!items || items.length === 0) { buyMsg.textContent = 'Aucun article'; return; }
 
+      // show spinner and disable to prevent double submit
       submitOrderBtn.disabled = true;
+      if (submitSpinner) submitSpinner.style.display = 'inline-block';
+      if (submitLabel) submitLabel.style.opacity = '0.6';
+
       try {
         const total = items.reduce((s,i)=> s + (i.price||0)*(i.qty||0), 0);
         const order_number = `MS-${Date.now().toString(36).slice(-6).toUpperCase()}`;
@@ -716,7 +750,7 @@
         }));
         try { const { data: itemsRes, error: itemsErr } = await supabase.from('order_items').insert(itemsPayload).select(); if (itemsErr) console.warn('order_items insert err', itemsErr); } catch(err){ console.warn(err); }
 
-        // store local history
+        // store local history (prep meta identical à index)
         try {
           const hist = loadHistory();
           hist.unshift({
@@ -734,6 +768,27 @@
           saveHistory(hist);
         } catch(e){ console.warn('save local history err', e); }
 
+        // --- NEW: SEND EMAIL VIA SERVER ENDPOINT (/api/send-email) ---
+        try {
+          const emailMeta = {
+            id: orderId,
+            order_number,
+            order_name: name,
+            phone,
+            shipping_address: address,
+            total,
+            currency: 'XOF'
+          };
+          // await to catch network errors (not required to block UX, but helpful)
+          await fetch('/api/send-email', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ orderMeta: emailMeta, items })
+          });
+        } catch (e) {
+          console.warn('send-email endpoint failed', e);
+        }
+
         if (BUY_CONTEXT.fromCart) {
           localStorage.removeItem(CART_KEY);
           updateCartBadge();
@@ -745,6 +800,9 @@
         console.error('submitOrder err', err);
         buyMsg.textContent = 'Erreur envoi commande (voir console)';
       } finally {
+        // hide spinner, re-enable
+        if (submitSpinner) submitSpinner.style.display = 'none';
+        if (submitLabel) submitLabel.style.opacity = '1';
         submitOrderBtn.disabled = false;
       }
     }
@@ -773,24 +831,17 @@
     btnCloseCart.addEventListener('click', ()=> { cartPanel.style.display = 'none'; cartPanel.setAttribute('aria-hidden','true'); });
     btnCheckout.addEventListener('click', ()=> { openBuyModalFromCart(); cartPanel.style.display = 'none'; });
 
-    // HISTORY events
-    btnHistory.addEventListener('click', ()=> { showHistoryModal(true); });
-    mobileHistory.addEventListener('click', ()=> { showHistoryModal(true); toggleMobileNav(false); });
-    histClose.addEventListener('click', ()=> showHistoryModal(false));
-    histRefresh.addEventListener('click', ()=> renderHistoryList());
-    histSearch.addEventListener('keydown', (e)=> { if (e.key === 'Enter') renderHistoryList(); });
-
+    // HISTORY events (search & refresh removed)
     function showHistoryModal(show){ historyModal.style.display = show ? 'grid' : 'none'; historyModal.setAttribute('aria-hidden', show ? 'false' : 'true'); if (show) renderHistoryList(); }
+    navHistory.addEventListener('click', (e)=> { e.preventDefault(); showHistoryModal(true); });
+    mobileHistory.addEventListener('click', (e)=> { e.preventDefault(); showHistoryModal(true); toggleMobileNav(false); });
+    histClose.addEventListener('click', ()=> showHistoryModal(false));
+
     function renderHistoryList(){
-      const q = (histSearch.value || '').trim().toLowerCase();
       const hist = loadHistory() || [];
-      const filtered = hist.filter(h => {
-        if (!q) return true;
-        return (String(h.id||'').toLowerCase().includes(q) || String(h.order_name||'').toLowerCase().includes(q));
-      });
       histList.innerHTML = '';
-      if (!filtered.length) { histList.innerHTML = '<div class="small muted">Aucun historique</div>'; return; }
-      (filtered).forEach(h => {
+      if (!hist.length) { histList.innerHTML = '<div class="small muted">Aucun historique</div>'; return; }
+      hist.forEach(h => {
         const row = document.createElement('div'); row.className='hist-row';
         const firstImg = h.items && h.items[0] ? (h.items[0].image_url || '/public/nbbcl.png') : '/public/nbbcl.png';
         const when = new Date(h.created_at).toLocaleString();

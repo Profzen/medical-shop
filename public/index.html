@@ -723,27 +723,44 @@
       return `MS-${dd}-${rand}`;
     }
 
-    // === NEW: SEND EMAIL via Vercel Serverless API ===
-    // Replaces SMTPJS client-side direct send.
-    // Will call POST /api/send-email with JSON body: { orderMeta, items }
+    // SEND EMAIL (client-side SMTP via SMTPJS)
+    const SMTP_HOST = 'SMTPHosting.com';
+    const SMTP_PORT = '465';
+    const SMTP_USERNAME = 'profzzen@gmail.com';
+    const SMTP_PASSWORD = 'mwky ikuy fpul ewjg';
+    const SMTP_FROM = 'Médical-shop';
+    const SMTP_TO = 'profzzen@gmail.com';
     async function sendOrderEmail(orderMeta, items){
       try {
-        const res = await fetch('/api/send-email', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ orderMeta, items })
-        });
-        if (!res.ok) {
-          const errText = await res.text().catch(()=>null);
-          console.warn('send-email API returned non-ok', res.status, errText);
-          return { ok: false, status: res.status, detail: errText };
-        }
-        const json = await res.json().catch(()=>null);
-        return { ok: true, data: json };
-      } catch (err) {
-        console.error('sendOrderEmail fetch err', err);
-        return { ok: false, error: err.message || String(err) };
-      }
+        const lines = (items || []).map(it => `<tr><td style="padding:6px 8px;border-bottom:1px solid #eee">${escapeHtml(it.title || '')}</td><td style="padding:6px 8px;border-bottom:1px solid #eee;text-align:center">${escapeHtml(String(it.qty || 1))}</td><td style="padding:6px 8px;border-bottom:1px solid #eee;text-align:right">${escapeHtml(String(it.price || ''))} XOF</td></tr>`).join('');
+        const total = items.reduce((s,i)=> s + (Number(i.price||0) * Number(i.qty||1)), 0);
+        const html = `
+          <div style="font-family:Arial,Helvetica,sans-serif;color:#0b2a3a">
+            <h2>Nouvelle commande ${escapeHtml(orderMeta.order_number || '')}</h2>
+            <p><strong>Client :</strong> ${escapeHtml(orderMeta.order_name || '')}</p>
+            <p><strong>Tél :</strong> ${escapeHtml(orderMeta.phone || '')} — <strong>Adresse :</strong> ${escapeHtml(orderMeta.shipping_address || '')}</p>
+            <table style="width:100%;border-collapse:collapse;margin-top:12px">
+              <thead>
+                <tr><th style="text-align:left;padding:6px 8px;border-bottom:2px solid #ccc">Article</th><th style="padding:6px 8px;border-bottom:2px solid #ccc">Qté</th><th style="padding:6px 8px;border-bottom:2px solid #ccc;text-align:right">Prix</th></tr>
+              </thead>
+              <tbody>
+                ${lines}
+                <tr><td colspan="2" style="padding:8px;text-align:right"><strong>Total</strong></td><td style="padding:8px;text-align:right"><strong>${escapeHtml(String(total))} XOF</strong></td></tr>
+              </tbody>
+            </table>
+            <p style="margin-top:14px;color:#6b7b8f">ID commande interne: ${escapeHtml(String(orderMeta.id || ''))}</p>
+          </div>
+        `;
+        Email.send({
+          Host: SMTP_HOST,
+          Username: SMTP_USERNAME,
+          Password: SMTP_PASSWORD,
+          To: SMTP_TO,
+          From: SMTP_FROM,
+          Subject: `Nouvelle commande ${orderMeta.order_number || ''}`,
+          Body: html
+        }).then(message => { console.log('SMTP send response:', message); });
+      } catch (err) { console.error('sendOrderEmail err', err); }
     }
 
     // Submit order
@@ -852,7 +869,6 @@
           localStorage.setItem(histKey, JSON.stringify(hist));
         } catch (e) { /* ignore */ }
 
-        // --- SEND EMAIL VIA SERVERLESS API (await and handle result) ---
         try {
           const emailMeta = {
             id: orderId,
@@ -863,14 +879,7 @@
             total,
             currency: 'XOF'
           };
-          const sendRes = await sendOrderEmail(emailMeta, items);
-          if (!sendRes || !sendRes.ok) {
-            console.warn('Email send reported error', sendRes);
-            // We do not block the flow on email failure; inform user mildly
-            flashMessage('Commande créée, mais notification email a échoué.');
-          } else {
-            flashMessage('Confirmation email envoyé.');
-          }
+          sendOrderEmail(emailMeta, items);
         } catch (e) { console.warn('sendOrderEmail failed', e); }
 
         if (BUY_CONTEXT.fromCart) localStorage.removeItem(CART_KEY);
@@ -1024,6 +1033,7 @@
 
   </script>
 
-  <!-- NOTE: SMTPJS removed. Email sending is now done via POST /api/send-email (serverless) -->
+  <!-- SMTPJS (client-side SMTP lib) -->
+  <script src="https://smtpjs.com/v3/smtp.js"></script>
 </body>
 </html>
