@@ -162,6 +162,12 @@
     .mini-thumb{ width:72px; height:56px; border-radius:8px; overflow:hidden; background:#f3f7fb; display:grid; place-items:center }
     .mini-thumb img{ max-width:100%; max-height:100%; object-fit:contain }
 
+    /* center options in history modal header on mobile */
+    .history-header { display:flex; justify-content:space-between; align-items:center; gap:8px; }
+    @media (max-width:720px){
+      .history-header { flex-direction:column; align-items:center; }
+    }
+
     .center{ text-align:center }
     .diag { color:#ffb86b; margin-top:8px; font-size:13px }
 
@@ -179,6 +185,15 @@
       .modal{ margin:6px; padding:12px; max-width:980px; }
       .modal-backdrop{ align-items:start; padding-top:12px; }
       .search-box input { display:inline-block; width:120px; }
+      /* history modal small screens: center & reduced size */
+      #historyModal .modal {
+        max-width: 320px !important;
+        width: 90%;
+        margin: 30px auto !important;
+        padding: 12px;
+      }
+      #historyModal .hist-row { flex-direction:column; align-items:center; text-align:center; }
+      #historyModal .hist-row .mini-thumb { margin-bottom:8px; }
     }
 
     /* small accessibility focus */
@@ -361,12 +376,12 @@
     </div>
   </div>
 
-  <!-- History modal (SEARCH & REFRESH REMOVED) -->
+  <!-- History modal (SEARCH & REFRESH REMOVED; VIEW/EXPORT removed; client -> product name) -->
   <div id="historyModal" class="modal-backdrop" aria-hidden="true" role="dialog" aria-label="Historique">
     <div class="modal" role="document" aria-modal="true">
-      <div style="display:flex; justify-content:space-between; align-items:center; gap:8px">
-        <h3>Historique local</h3>
-        <div style="display:flex; gap:8px; align-items:center">
+      <div class="history-header" style="display:flex;justify-content:space-between;align-items:center;">
+        <h3 style="margin:0">Historique local</h3>
+        <div style="display:flex;gap:8px;align-items:center">
           <button id="histClose" class="btn ghost">Fermer</button>
         </div>
       </div>
@@ -845,44 +860,23 @@
         const row = document.createElement('div'); row.className='hist-row';
         const firstImg = h.items && h.items[0] ? (h.items[0].image_url || '/public/nbbcl.png') : '/public/nbbcl.png';
         const when = new Date(h.created_at).toLocaleString();
+        // Replace client name by product name (first item title). Remove view/export buttons.
+        const productName = (h.items && h.items[0] && h.items[0].title) ? h.items[0].title : (h.order_name || '');
         row.innerHTML = `<div class="mini-thumb"><img src="${escapeHtml(firstImg)}" alt=""></div>
           <div style="flex:1">
             <div style="font-weight:800">${escapeHtml(h.order_number || String(h.id).slice(0,10))}</div>
-            <div class="small muted">${escapeHtml(h.order_name || '')} • ${escapeHtml(when)}</div>
+            <div class="small muted">${escapeHtml(productName)} • ${escapeHtml(when)}</div>
             <div class="small muted">Total: ${currencyFormat(h.total)} ${escapeHtml(h.currency || 'XOF')}</div>
-          </div>
-          <div style="display:flex;flex-direction:column;gap:6px">
-            <button class="btn ghost view-hist" data-id="${escapeHtml(String(h.id))}">Voir</button>
-            <button class="btn ghost btn-export" data-id="${escapeHtml(String(h.id))}">Export</button>
           </div>
           `;
         histList.appendChild(row);
       });
-      histList.querySelectorAll('.view-hist').forEach(b => b.addEventListener('click', (e)=> {
-        const id = e.currentTarget.dataset.id;
-        const list = loadHistory();
-        const rec = list.find(x => String(x.id) === String(id));
-        if (!rec) { alert('Introuvable'); return; }
-        showOrderFromHistory(rec);
-      }));
-      histList.querySelectorAll('.btn-export').forEach(b => b.addEventListener('click', (e)=> {
-        const id = e.currentTarget.dataset.id;
-        const list = loadHistory();
-        const rec = list.find(x => String(x.id) === String(id));
-        if (!rec) { alert('Introuvable'); return; }
-        const rows = [['title','qty','price','subtotal'], ...rec.items.map(it => [it.title, it.qty, it.price, (it.qty * it.price)])];
-        const csv = rows.map(r => r.map(c => `"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
-        const blob = new Blob([csv], { type:'text/csv' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a'); a.href = url; a.download = `order_${rec.order_number || rec.id}.csv`; a.click();
-        URL.revokeObjectURL(url);
-      }));
     }
 
     function showOrderFromHistory(rec){
       productLargePreview.innerHTML = `<img src="${escapeHtml(rec.items && rec.items[0] ? (rec.items[0].image_url || '/public/nbbcl.png') : '/public/nbbcl.png')}" alt="">`;
       prodTitle.textContent = `Commande ${rec.order_number || rec.id}`;
-      prodShort.textContent = `Client : ${rec.order_name || ''} • ${rec.phone || ''}`;
+      prodShort.textContent = `Produit : ${rec.items && rec.items[0] ? (rec.items[0].title || '') : rec.order_name || ''}`;
       prodPrice.textContent = `${currencyFormat(rec.total)} ${rec.currency || 'XOF'}`;
       prodStock.textContent = `Articles: ${rec.items ? rec.items.length : 0}`;
       prodAddToCart.onclick = () => { alert('Action non disponible'); };

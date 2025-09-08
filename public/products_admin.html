@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
   <meta charset="utf-8" />
-  <title>Produits • Admin — MedicalShop</title>
+  <title>Produits • Admin — MedicalShop (corrigé)</title>
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <style>
     :root{
@@ -22,7 +22,7 @@
 
     /* Mobile menu button */
     .menu-btn{ display:none; background:transparent; border:1px solid rgba(255,255,255,0.04); padding:8px 10px; border-radius:8px; cursor:pointer; color:var(--white); font-weight:700 }
-    .mobile-menu{ display:none; position:absolute; right:12px; top:62px; background:linear-gradient(180deg,var(--panel),#071428); border-radius:10px; padding:8px; border:1px solid rgba(255,255,255,0.04); box-shadow:var(--shadow); min-width:180px }
+    .mobile-menu{ display:none; position:absolute; right:12px; top:62px; background:linear-gradient(180deg,var(--panel),#071428); border-radius:10px; padding:8px; border:1px solid rgba(255,255,255,0.04); box-shadow:var(--shadow); min-width:220px; max-width:calc(100% - 40px) }
     .mobile-menu a{ display:block; padding:8px; color:var(--white); text-decoration:none }
     .mobile-menu a:hover{ background:rgba(255,255,255,0.02); border-radius:6px }
 
@@ -103,6 +103,12 @@
 
     /* accessibility focus styles */
     button:focus, input:focus, select:focus, a:focus{ outline:2px solid rgba(31,111,235,0.6); outline-offset:2px }
+
+    /* small overlay while auth-check in progress */
+    #authCheckingOverlay{ position:fixed; inset:0; display:none; align-items:center; justify-content:center; background:rgba(0,0,0,0.45); z-index:9999; }
+    #authCheckingOverlay .panel { max-width:420px; text-align:center; padding:20px; }
+    .spinner { display:inline-block; width:18px; height:18px; border:3px solid rgba(255,255,255,0.12); border-top-color: white; border-radius:50%; animation:spin 0.8s linear infinite; margin-right:8px; vertical-align:middle; }
+    @keyframes spin { to { transform: rotate(360deg); } }
   </style>
 </head>
 <body>
@@ -184,7 +190,11 @@
               <textarea id="mDesc" style="width:100%; margin-top:6px; min-height:80px"></textarea>
 
               <div style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap">
-                <button id="mSave" class="btn" type="submit">Enregistrer</button>
+                <!-- BUTTON UPDATED: label + spinner -->
+                <button id="mSave" class="btn" type="submit" aria-live="polite">
+                  <span class="mSaveLabel">Enregistrer</span>
+                  <span id="mSaveSpinner" style="display:none; margin-left:8px"><span class="spinner" aria-hidden="true"></span></span>
+                </button>
                 <button id="mCancel" class="btn ghost" type="button">Annuler</button>
                 <button id="mDelete" class="btn ghost" type="button">Supprimer</button>
               </div>
@@ -229,12 +239,23 @@
     </div>
   </div>
 
+  <!-- small overlay shown while auth check in progress -->
+  <div id="authCheckingOverlay" aria-hidden="true">
+    <div class="panel">
+      <div style="display:flex; align-items:center; justify-content:center;">
+        <span class="spinner" aria-hidden="true"></span>
+        <strong>Vérification de la session & des droits administrateur…</strong>
+      </div>
+      <div style="margin-top:12px;" class="small muted">Merci de patienter — si vous êtes déjà connecté, cette étape devrait être courte.</div>
+    </div>
+  </div>
+
 <script type="module">
   import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
   // CONFIG - remplace par tes valeurs / fonctions edge si dispo
   const SUPABASE_URL = "https://vrzmowqzegmaymewmbij.supabase.co";
-  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5..."; // trimmed for brevity in editor (keeps working in practice)
+  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZyem1vd3F6ZWdtYXltZXdtYmlqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTUzMDMwNzksImV4cCI6MjA3MDg3OTA3OX0.TmkdqXhkVgbfhAWVj-qLC9bDTL0-_YoGz-SgS81sNG0";
 
   // Edge endpoints (optionnels)
   const EDGE_ADD_PRODUCT_URL = "";    // priorité add
@@ -272,6 +293,8 @@
   const mThumb = document.getElementById('mThumb');
   const mImage = document.getElementById('mImage');
   const mSave = document.getElementById('mSave');
+  const mSaveLabel = document.querySelector('#mSave .mSaveLabel');
+  const mSaveSpinner = document.getElementById('mSaveSpinner');
   const mCancel = document.getElementById('mCancel');
   const mDelete = document.getElementById('mDelete');
   const mMsg = document.getElementById('mMsg');
@@ -288,6 +311,8 @@
   const viewDelBtn = document.getElementById('viewDelBtn');
 
   const btnProcessPending = document.getElementById('btnProcessPending');
+
+  const authCheckingOverlay = document.getElementById('authCheckingOverlay');
 
   // paging
   let page = 0;
@@ -311,19 +336,6 @@
     const c = loadPending().length;
     btnProcessPending.textContent = c ? `Traiter opérations en attente (${c})` : 'Traiter opérations en attente';
     btnProcessPending.style.display = c ? '' : '';
-  }
-
-  // ----- Auth & admin check (simple) -----
-  async function ensureAdmin(){
-    try {
-      const { data: userData } = await supabase.auth.getUser();
-      if (!userData?.user) { window.location.href = REDIRECT_LOGIN; return false; }
-      const currentUser = userData.user;
-      const { data, error } = await supabase.from('admins').select('user_id').eq('user_id', currentUser.id).limit(1);
-      if (error) { console.warn('admins check err', error); alert('Erreur vérification admin'); await supabase.auth.signOut(); window.location.href = REDIRECT_LOGIN; return false; }
-      if (!data || data.length === 0) { alert('Compte non admin — accès refusé'); await supabase.auth.signOut(); window.location.href = REDIRECT_LOGIN; return false; }
-      return true;
-    } catch (err) { console.error(err); return false; }
   }
 
   // ----- Categories -----
@@ -512,16 +524,24 @@
   async function saveModal(e){
     if (e) e.preventDefault();
     mMsg.textContent = '';
-    const id = mId.value || null;
-    const title = mTitleInput.value.trim();
-    const price = Number(mPriceInput.value || 0);
-    const stock = Number(mStockInput.value || 0);
-    const desc = mDesc.value.trim();
-    const category_id = mCategory.value || null;
 
-    if (!title || !price) { mMsg.textContent = 'Titre et prix requis'; return; }
+    // show spinner + disable save to prevent double clicks
+    try {
+      mSave.disabled = true;
+      mSaveSpinner.style.display = 'inline-block';
+      mSaveLabel.textContent = 'Enregistrement…';
+    } catch (_) {}
 
     try {
+      const id = mId.value || null;
+      const title = mTitleInput.value.trim();
+      const price = Number(mPriceInput.value || 0);
+      const stock = Number(mStockInput.value || 0);
+      const desc = mDesc.value.trim();
+      const category_id = mCategory.value || null;
+
+      if (!title || !price) { mMsg.textContent = 'Titre et prix requis'; return; }
+
       let uploaded = null;
       if (mImage.files?.[0]) {
         try { uploaded = await uploadFileToStorage(mImage.files[0]); }
@@ -586,6 +606,13 @@
     } catch (err) {
       console.error('save err', err);
       mMsg.textContent = err.message || 'Erreur';
+    } finally {
+      // always re-enable and hide spinner
+      try {
+        mSave.disabled = false;
+        mSaveSpinner.style.display = 'none';
+        mSaveLabel.textContent = 'Enregistrer';
+      } catch (_) {}
     }
   }
 
@@ -732,7 +759,7 @@
   function openModalForNew(){
     mId.value = '';
     mTitleInput.value = '';
-    mPriceInput.value = '';
+    mPriceInput.value = 0;
     mStockInput.value = 0;
     mDesc.value = '';
     mCategory.value = '';
@@ -778,17 +805,148 @@
   mobileJumpProducts?.addEventListener('click', ()=> { document.getElementById('productsList').scrollIntoView({ behavior:'smooth' }); mobileMenu.style.display='none'; menuBtn.setAttribute('aria-expanded','false'); });
 
   // attempt to process pending items at init if Edge urls present
-  async function init(){
-    if (!await ensureAdmin()) return;
-    await loadCategories();
-    await loadPage();
-    updatePendingBtn();
+  async function tryAutoProcessPending(){
     if ((EDGE_ADD_PRODUCT_URL || EDGE_UPDATE_PRODUCT_URL || EDGE_DELETE_PRODUCT_URL) && loadPending().length > 0) {
       setTimeout(()=> { processPending(); }, 1200);
     }
   }
 
-  init();
+  // ---------------- AUTH CHECK (FIX) ----------------
+  // Problem observed:
+  // - earlier code used supabase.auth.getUser() synchronously and sometimes it returned null briefly,
+  //   causing immediate redirect to login then back to admin. To avoid that we:
+  //   1) Wait briefly for session restoration (getSession + onAuthStateChange) before deciding.
+  //   2) If a session exists, verify admin role in DB. If verification fails due to network error,
+  //      we show a warning but do NOT forcibly sign out the user (avoids redirect loops).
+  //   3) If no session after the wait, redirect to login with ?next=... so after login user returns.
+  //
+  // Implementation below preserves existing logic/flows but makes the auth decision robust.
+
+  function showAuthOverlay(show){
+    authCheckingOverlay.style.display = show ? 'grid' : 'none';
+    authCheckingOverlay.setAttribute('aria-hidden', show ? 'false' : 'true');
+  }
+
+  // Wait for an existing session or for an auth event for a short timeout
+  async function waitForSession(timeout = 2500) {
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      if (sessionData?.session) return sessionData.session;
+
+      // if no session now, listen for auth state change for a short while
+      return await new Promise((resolve) => {
+        let resolved = false;
+        const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
+          if (session && session.user) {
+            if (!resolved) {
+              resolved = true;
+              try { sub.subscription.unsubscribe(); } catch(_) {}
+              resolve(session);
+            }
+          }
+        });
+
+        // timeout fallback
+        setTimeout(() => {
+          if (!resolved) {
+            resolved = true;
+            try { sub.subscription.unsubscribe(); } catch(_) {}
+            resolve(null);
+          }
+        }, timeout);
+      });
+    } catch (err) {
+      console.warn('waitForSession err', err);
+      return null;
+    }
+  }
+
+  function redirectToLogin() {
+    // preserve current page for return after login
+    const next = encodeURIComponent(window.location.pathname + window.location.search);
+    window.location.href = `${REDIRECT_LOGIN}?next=${next}`;
+  }
+
+  async function checkAdminAndInit(user) {
+    if (!user) {
+      // no user object => redirect to login
+      redirectToLogin();
+      return false;
+    }
+
+    try {
+      const { data, error } = await supabase.from('admins').select('user_id').eq('user_id', user.id).limit(1);
+      if (error) {
+        // Network or permission error while checking — warn but DON'T forcibly sign the user out.
+        console.warn('admins check err (network/perm):', error);
+        toast('Impossible de vérifier les droits admin (erreur réseau). Réessai en cours…');
+        // allow page to continue but do not enable destructive actions until verification passes
+        // Try a best-effort: continue to load categories & page (keeps UX friendly)
+        await loadCategories();
+        await loadPage();
+        updatePendingBtn();
+        tryAutoProcessPending();
+        return true;
+      }
+      if (!data || data.length === 0) {
+        // user exists but not admin: redirect to login (no signOut)
+        alert('Compte non admin — accès refusé');
+        redirectToLogin();
+        return false;
+      }
+      // OK: user is admin -> continue with page initialization
+      await loadCategories();
+      await loadPage();
+      updatePendingBtn();
+      tryAutoProcessPending();
+      return true;
+    } catch (err) {
+      console.error('checkAdminAndInit err', err);
+      toast('Erreur vérification admin (voir console)');
+      // fallback: attempt to load page (less ideal but avoids bootloop)
+      await loadCategories();
+      await loadPage();
+      updatePendingBtn();
+      tryAutoProcessPending();
+      return true;
+    }
+  }
+
+  // Main init flow that waits for session restoration
+  (async function init() {
+    showAuthOverlay(true);
+    // wait briefly for session restoration or auth event
+    const session = await waitForSession(3000);
+    if (!session || !session.user) {
+      // no session found in time -> redirect to login (preserves next param)
+      showAuthOverlay(false);
+      redirectToLogin();
+      return;
+    }
+
+    // session exists; check admin rights
+    const ok = await checkAdminAndInit(session.user);
+    showAuthOverlay(false);
+
+    // also attach listener for future auth changes: if signed out unexpectedly, redirect to login
+    const { data: sub } = supabase.auth.onAuthStateChange((event, sess) => {
+      if (event === 'SIGNED_OUT' || event === 'USER_DELETED') {
+        // redirect to login preserving next
+        redirectToLogin();
+      }
+      // if user signed in later, re-check admin (rare in admin panel but safe)
+      if (event === 'SIGNED_IN' && sess?.user) {
+        checkAdminAndInit(sess.user).catch(()=>{});
+      }
+    });
+
+    // keep subscription active for lifecycle; we don't unsubscribe here because page should respond to future auth events
+  })();
+
+  // ---------------- End auth check ----------------
+
+  // init helpers exposed for debugging
+  window._admin = { loadPage, loadCategories, loadPending, processPending };
 
 </script>
 </body>

@@ -92,20 +92,6 @@
     .responsive-img {
       display:block; margin:auto; max-width:100%; max-height:100%; width:auto; height:auto; object-fit:contain;
     }
-    .p-thumb img.responsive-img,
-    .preview-small img.responsive-img,
-    .vp-thumb img.responsive-img,
-    .order-item .responsive-img,
-    .p-card img.responsive-img,
-    .imgwrap img.responsive-img {
-      object-fit:contain !important;
-      max-width:100% !important;
-      max-height:100% !important;
-      width:auto !important;
-      height:auto !important;
-      display:block !important;
-      margin:auto !important;
-    }
 
     /* ORDERS LIST */
     .orders-list{ display:flex; flex-direction:column; gap:12px; max-height:72vh; overflow:auto; padding-right:6px; }
@@ -251,7 +237,7 @@
           <div class="searchbar" role="search">
             <input id="quickSearch" type="search" placeholder="Recherche rapide produit par titre / SKU..." aria-label="Recherche produit rapide" />
             <button id="btn-search" class="btn">Rechercher</button>
-            <button id="btn-new" class="btn ghost">Créer un produit</button>
+            <!-- bouton "Créer un produit" supprimé sur demande -->
             <button id="btn-go-products" class="btn ghost">Gérer tous les produits</button>
           </div>
 
@@ -272,16 +258,23 @@
           </div>
         </div>
 
+        <!--
+          // NOTE: ici était "Résultats rapides" — on y place maintenant le TOP 10 produits (30j)
+        -->
         <div class="panel" style="margin-top:12px">
-          <h3>Résultats rapides</h3>
-          <div id="quickResults" class="products-preview" style="margin-top:10px"></div>
+          <h3>Top 10 produits (30j)</h3>
+          <div id="topProducts" style="display:grid; gap:10px; margin-top:10px"></div>
+          <div id="topDiag" class="small muted" style="margin-top:8px"></div>
         </div>
       </div>
 
       <aside>
+        <!--
+          // NOTE: cette zone était Top/Actions — on la transforme en "Résultats rapides"
+        -->
         <div class="panel panel-right">
-          <h3>Top produits (30 jours)</h3>
-          <div id="topProducts" style="display:grid; gap:10px; margin-top:10px"></div>
+          <h3>Résultats rapides</h3>
+          <div id="quickResults" class="products-preview" style="margin-top:10px"></div>
         </div>
 
         <div class="panel panel-right" style="margin-top:12px">
@@ -364,6 +357,21 @@
     </div>
   </div>
 
+  <!-- PRODUCT VIEW (read-only) MODAL (for Top10 "Voir") -->
+  <div id="productViewModal" class="modal-backdrop" aria-hidden="true">
+    <div class="modal panel" role="dialog" aria-modal="true" aria-labelledby="productViewTitle" tabindex="-1">
+      <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:8px; flex-wrap:wrap">
+        <h3 id="productViewTitle">Détails produit</h3>
+        <div>
+          <button id="productViewClose" class="btn ghost">Fermer</button>
+        </div>
+      </div>
+      <div id="productViewContent">
+        <!-- rempli dynamiquement -->
+      </div>
+    </div>
+  </div>
+
   <script type="module">
     import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
@@ -377,7 +385,7 @@
     const whoami = $("#whoami");
     const btnLogout = $("#btn-logout");
     const btnLogout2 = $("#btn-logout-2");
-    const btnNew = $("#btn-new");
+    // const btnNew = $("#btn-new"); // removed by request
     const btnSearch = $("#btn-search");
     const quickSearch = $("#quickSearch");
     const quickResults = $("#quickResults");
@@ -392,6 +400,7 @@
     const btnRefreshOrders = $("#btn-refresh-orders");
     const yearEl = $("#year");
     const ordersDiag = $("#ordersDiag");
+    const topDiag = $("#topDiag");
 
     // product edit modal elements
     const modal = $("#modal");
@@ -406,6 +415,7 @@
     const editImage = $("#editImage");
     const cancelEdit = $("#cancelEdit");
     const editMsg = $("#editMsg");
+    const saveEdit = $("#saveEdit");
 
     // order modal elements
     const orderModal = $("#orderModal");
@@ -417,6 +427,12 @@
     const od_validate = $("#od_validate");
     const od_reject = $("#od_reject");
     const od_diag = $("#od_diag");
+
+    // product view modal (readonly)
+    const productViewModal = $("#productViewModal");
+    const productViewClose = $("#productViewClose");
+    const productViewContent = $("#productViewContent");
+    const productViewTitle = $("#productViewTitle");
 
     yearEl && (yearEl.textContent = new Date().getFullYear());
 
@@ -481,7 +497,7 @@
     function attachHandlers(){
       btnSearch.addEventListener('click', onQuickSearch);
       quickSearch.addEventListener('keydown', (e)=> { if (e.key==='Enter') onQuickSearch(); });
-      btnNew.addEventListener('click', () => openEditorForNew());
+      // btnNew removed
       btnGoProducts.addEventListener('click', ()=> window.location.href = 'products_admin.html');
       btnOpenProductsAdmin.addEventListener('click', ()=> window.location.href = 'products_admin.html');
       btnRefreshOrders.addEventListener('click', ()=> loadOrdersRecent());
@@ -506,6 +522,9 @@
         await loadOrdersRecent();
         await showOrderModal(id);
       });
+
+      // product view modal close
+      productViewClose.addEventListener('click', ()=> { showProductView(false); });
     }
 
     async function refreshDashboard(){
@@ -525,57 +544,65 @@
       } catch (err) { console.error('loadCounts', err); }
     }
 
-    // ----- Top products, orders, quick search, modals, editor logic (kept exactly) -----
-    // For brevity here we keep the same implementations as previously:
-    // loadTopProducts(), loadOrdersRecent(), loadOrdersFallback(), renderOrdersList(),
-    // showOrderModal(), renderOrderModal(), changeOrderStatus(),
-    // onQuickSearch(), openEditorForId(), openEditorForNew(), fillEditorWith(),
-    // loadCategories(), deleteProductConfirm(), deleteProduct(), uploadImageFile(), onEditSubmit(), showModal()
-    // (they are included below unchanged to preserve functionality)
+    // ----- Top products, orders, quick search, modals, editor logic (kept exactly with adjustments) -----
 
-    // ----- loadTopProducts -----
+    // ----- loadTopProducts (Top 10, no thumbnails) -----
     async function loadTopProducts(){
+      topProductsEl.innerHTML = 'Chargement…';
+      topDiag.textContent = '';
       try {
         const since = new Date(Date.now() - 30*24*60*60*1000).toISOString();
         const { data: items, error } = await supabase.from('order_items').select('product_id,quantity').gte('created_at', since);
         if (error) { console.warn(error); topProductsEl.innerHTML = '<div class="small muted">Erreur</div>'; return; }
         const map = {};
-        (items||[]).forEach(it => { map[it.product_id] = (map[it.product_id]||0) + Number(it.quantity||0); });
+        (items||[]).forEach(it => { if (it.product_id) map[it.product_id] = (map[it.product_id]||0) + Number(it.quantity||0); });
         const ids = Object.keys(map);
         if (ids.length === 0) { topProductsEl.innerHTML = '<div class="small muted">Aucun produit vendu récemment</div>'; return; }
-        const { data: prods, error: pErr } = await supabase.from('products').select('id,title,price,image_url,image_path').in('id', ids);
-        if (pErr) { console.warn('top prods fetch err', pErr); topProductsEl.innerHTML = '<div class="small muted">Erreur</div>'; return; }
-        if (!prods || prods.length === 0) { topProductsEl.innerHTML = '<div class="small muted">Aucun produit</div>'; return; }
+
+        // fetch top products metadata
+        const { data: prods, error: pErr } = await supabase.from('products').select('id,title,price').in('id', ids).order('title',{ascending:true});
+        if (pErr) {
+          console.warn('top prods fetch err', pErr);
+          topProductsEl.innerHTML = '<div class="small muted">Erreur</div>';
+          topDiag.textContent = 'Erreur récupération produits (voir console)';
+          return;
+        }
+        if (!prods || prods.length === 0) {
+          topProductsEl.innerHTML = '<div class="small muted">Aucun produit</div>';
+          return;
+        }
+        // sort by sold qty desc
         prods.sort((a,b)=> (map[b.id]||0) - (map[a.id]||0));
         topProductsEl.innerHTML = '';
         for (const p of prods.slice(0,10)) {
-          const div = document.createElement('div');
-          div.style.display='flex'; div.style.justifyContent='space-between'; div.style.gap='8px';
-          const initialSrc = p.image_url || '/nbbcl.png';
-          div.innerHTML = `<div style="display:flex;gap:10px;align-items:center">
-              <div style="width:42px;height:42px;border-radius:8px;overflow:hidden;background:#081025">
-                <div class="imgwrap"><img class="responsive-img" src="${escapeHtml(initialSrc)}" data-path="${escapeHtml(p.image_path||'')}" alt="${escapeHtml(p.title||'')}"></div>
-              </div>
-              <div style="min-width:0">
-                <div style="font-weight:700">${escapeHtml(p.title)}</div>
-                <div class="small muted">${Number(p.price).toLocaleString('fr-FR')} XOF</div>
-              </div>
+          const qty = map[p.id] || 0;
+          const row = document.createElement('div');
+          row.style.display='flex';
+          row.style.justifyContent='space-between';
+          row.style.alignItems='center';
+          row.style.gap='8px';
+          row.style.padding = '8px';
+          row.style.borderRadius = '8px';
+          row.style.background = 'rgba(255,255,255,0.01)';
+          row.innerHTML = `<div style="min-width:0">
+              <div style="font-weight:700">${escapeHtml(p.title)}</div>
+              <div class="small muted">${Number(p.price||0).toLocaleString('fr-FR')} XOF — Vendu: ${qty} pcs</div>
             </div>
-            <div style="min-width:70px;text-align:right">${map[p.id]||0} pcs</div>`;
-          topProductsEl.appendChild(div);
-
-          if (!p.image_url && p.image_path) {
-            (async () => {
-              const url = await computePublicUrlFromPath(p.image_path).catch(()=>null);
-              if (url) {
-                const imgEl = div.querySelector('img.responsive-img');
-                if (imgEl) imgEl.src = url;
-                tryUpdateImageUrlInDb(p.id, url, p.image_path);
-              }
-            })();
-          }
+            <div style="display:flex; gap:8px; align-items:center">
+              <button class="btn ghost btn-view-top" data-id="${escapeHtml(p.id)}">Voir</button>
+            </div>`;
+          topProductsEl.appendChild(row);
         }
-      } catch (err) { console.error('loadTopProducts err', err); topProductsEl.innerHTML = '<div class="small muted">Erreur</div>'; }
+        // attach handler
+        topProductsEl.querySelectorAll('.btn-view-top').forEach(b => b.addEventListener('click', (e)=> {
+          const id = e.currentTarget.dataset.id;
+          if (id) showProductView(id);
+        }));
+      } catch (err) {
+        console.error('loadTopProducts err', err);
+        topProductsEl.innerHTML = '<div class="small muted">Erreur</div>';
+        topDiag.textContent = 'Erreur (voir console).';
+      }
     }
 
     // ----- loadOrdersRecent + fallback + renderOrdersList -----
@@ -911,6 +938,9 @@
         if (error) throw error;
         await loadCategories();
         await fillEditorWith(data);
+        // enable editing mode
+        setEditorReadOnly(false);
+        document.getElementById('modalTitle').textContent = 'Modifier produit';
         showModal(true);
       } catch (err) { alert('Erreur ouverture éditeur'); console.error(err); }
     }
@@ -919,6 +949,7 @@
       fillEditorWith({ title:'', price:0, stock:0, short_description:'', image_url: null, image_path: null, category_id: '' });
       editId.value = '';
       document.getElementById('modalTitle').textContent = 'Créer produit';
+      setEditorReadOnly(false);
       showModal(true);
     }
 
@@ -946,6 +977,27 @@
         editPreview.innerHTML = '<div class="imgwrap"><span class="small muted">Aperçu</span></div>';
       }
       editMsg.textContent = '';
+    }
+
+    function setEditorReadOnly(readonly){
+      // toggle read-only display for editor modal: if readonly hide save and file input
+      if (readonly) {
+        saveEdit.style.display = 'none';
+        editImage.style.display = 'none';
+        editTitle.setAttribute('disabled','true');
+        editPrice.setAttribute('disabled','true');
+        editStock.setAttribute('disabled','true');
+        editCategory.setAttribute('disabled','true');
+        editShort.setAttribute('disabled','true');
+      } else {
+        saveEdit.style.display = '';
+        editImage.style.display = '';
+        editTitle.removeAttribute('disabled');
+        editPrice.removeAttribute('disabled');
+        editStock.removeAttribute('disabled');
+        editCategory.removeAttribute('disabled');
+        editShort.removeAttribute('disabled');
+      }
     }
 
     async function loadCategories(){
@@ -1066,6 +1118,51 @@
 
     function showModal(show){ modal.style.display = show ? 'grid' : 'none'; modal.setAttribute('aria-hidden', show ? 'false' : 'true'); if (show) window.scrollTo({ top:0, behavior:'smooth' }); }
 
+    // ---------- PRODUCT VIEW (read-only) ----------
+    async function showProductView(productIdOrFalse){
+      if (!productIdOrFalse) {
+        productViewModal.style.display = 'none';
+        productViewModal.setAttribute('aria-hidden','true');
+        return;
+      }
+      const id = productIdOrFalse;
+      productViewContent.innerHTML = 'Chargement…';
+      productViewModal.style.display = 'grid';
+      productViewModal.setAttribute('aria-hidden','false');
+      try {
+        const { data, error } = await supabase.from('products').select('*').eq('id', id).single();
+        if (error || !data) {
+          productViewContent.innerHTML = '<div class="small muted">Produit introuvable</div>';
+          console.warn('product fetch err', error);
+          return;
+        }
+        const p = data;
+        productViewTitle.textContent = `Produit — ${p.title || ''}`;
+        const html = `
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <div><strong>Titre:</strong> ${escapeHtml(p.title || '')}</div>
+            <div><strong>Prix:</strong> ${Number(p.price||0).toLocaleString('fr-FR')} XOF</div>
+            <div><strong>Stock:</strong> ${escapeHtml(String(p.stock ?? 0))}</div>
+            <div><strong>Catégorie:</strong> ${escapeHtml(String(p.category_id || ''))}</div>
+            <div><strong>Description courte:</strong><div class="small muted" style="margin-top:6px">${escapeHtml(p.short_description || '')}</div></div>
+            <div style="margin-top:8px; display:flex; gap:8px">
+              <button id="pv_edit" class="btn">Modifier</button>
+              <button id="pv_close" class="btn ghost">Fermer</button>
+            </div>
+          </div>
+        `;
+        productViewContent.innerHTML = html;
+        // wire buttons
+        const pvEdit = document.getElementById('pv_edit');
+        const pvClose = document.getElementById('pv_close');
+        pvEdit.addEventListener('click', ()=> { productViewModal.style.display='none'; productViewModal.setAttribute('aria-hidden','true'); openEditorForId(p.id); });
+        pvClose.addEventListener('click', ()=> { showProductView(false); });
+      } catch (err) {
+        console.error('showProductView err', err);
+        productViewContent.innerHTML = '<div class="small muted">Erreur chargement (voir console)</div>';
+      }
+    }
+
     // ---------- Small UI: burger toggle & accessible close ----------
     document.addEventListener('DOMContentLoaded', function(){
       const burger = document.getElementById('burgerBtn');
@@ -1084,9 +1181,9 @@
       // close modals on Escape (non-intrusive, same behavior as earlier)
       window.addEventListener('keydown', (e) => {
         if (e.key === 'Escape') {
-          // close edit modal and order modal if open
           if (modal && modal.style.display === 'grid') showModal(false);
           if (orderModal && orderModal.style.display === 'grid') { orderModal.style.display = 'none'; orderModal.setAttribute('aria-hidden','true'); }
+          if (productViewModal && productViewModal.style.display === 'grid') { productViewModal.style.display = 'none'; productViewModal.setAttribute('aria-hidden','true'); }
         }
       });
     });
