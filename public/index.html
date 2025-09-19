@@ -8,10 +8,6 @@
   <style>
     /* =========================
        MedicalShop - Index page (responsive + modales verticales)
-       Modifs demandées :
-         - .products-section.container padding left/right x3 (seulement pour cette section)
-         - hero-image styled to "fondu" and full-height of hero
-         - no changes inside product cards themselves
        ========================= */
     :root{
       --bg: #f4f9ff;
@@ -50,7 +46,7 @@
     .burger-lines::before { top:-6px }
     .burger-lines::after { bottom:-6px }
 
-    .search-box{ margin-left:auto; display:flex; gap:8px; align-items:center; min-width:0 }
+    .search-box{ margin-left:auto; display:flex; gap:8px; align-items:center; min-width:0; position:relative; }
     .search-box input{ padding:10px 12px; border-radius:10px; border:0; width:220px; background:rgba(255,255,255,0.12); color:white; outline:none; min-width:0 }
     .search-box input::placeholder{ color:rgba(255,255,255,0.75) }
 
@@ -59,10 +55,7 @@
 
     /* HERO */
     .hero-band{ background:var(--hero-bg); padding:36px 0; border-bottom:1px solid var(--panel-border); }
-    .hero-inner{
-      display:flex; gap:18px; align-items:stretch; max-width:1200px; margin:0 auto; padding:0 18px; flex-wrap:wrap;
-      /* align-items:stretch to let the right image occupy full hero height */
-    }
+    .hero-inner{ display:flex; gap:18px; align-items:center; max-width:1200px; margin:0 auto; padding:0 18px; flex-wrap:wrap; }
     .kicker{ color:var(--accent-green); font-weight:800; margin-bottom:6px }
     .hero-title{ margin:0; font-size:30px; color:var(--text-dark) }
     .hero-sub{ margin-top:8px; color:var(--muted) }
@@ -72,24 +65,9 @@
 
     .btn-buy-cta { background: linear-gradient(135deg, var(--accent-green), var(--accent-green-2)); color: #02281a; border:0; padding:10px 14px; border-radius:10px; cursor:pointer; font-weight:800; box-shadow: 0 8px 20px rgba(34,197,94,0.12); }
 
-    /* Right hero image: new class to handle full-height + soft fade on the inner (left) edge */
-    .hero-image{
-      width:320px; min-width:220px; flex:0 0 320px; border-radius:12px; overflow:hidden; position:relative; background-size:cover; background-position:center center;
-      /* add a subtle overlay mask (webkit + standard) to create a left-side fade so edges are not harsh */
-      -webkit-mask-image: linear-gradient(90deg, rgba(0,0,0,1) 0%, rgba(0,0,0,0.9) 20%, rgba(0,0,0,0.6) 40%, rgba(0,0,0,0.2) 70%, rgba(0,0,0,0) 100%);
-      mask-image: linear-gradient(90deg, rgba(0,0,0,1) 0%, rgba(0,0,0,0.95) 18%, rgba(0,0,0,0.6) 40%, rgba(0,0,0,0.25) 70%, rgba(0,0,0,0) 100%);
-      background-color: #eaeef5;
-      display:flex; align-items:center; justify-content:center;
-    }
-    .hero-image img{ width:100%; height:100%; object-fit:cover; display:block; }
-
     /* PRODUCTS GRID */
-    .products-section{ padding:28px 0; max-width:1200px; margin:0 auto; }
-    /* === MODIFICATION REQ: triple horizontal external margins for products section only === */
-    /* original .container had padding:18px; we triple to 54px only for products section */
-    .products-section.container { padding-left:54px; padding-right:54px; }
-    /* ============================================================================== */
-
+    .products-section{ padding:28px 0; max-width:1200px; margin:0 auto; /* keep container centering */ }
+    .products-section.container{ padding-left:54px; padding-right:54px; } /* triple of 18px */
     .products-grid{ display:grid; grid-template-columns:repeat(4,1fr); gap:18px; }
     @media (max-width:1100px){ .products-grid{ grid-template-columns:repeat(3,1fr); } }
     @media (max-width:800px){ .products-grid{ grid-template-columns:repeat(2,1fr); } }
@@ -119,15 +97,16 @@
     .modal-backdrop{ position:fixed; inset:0; display:none; place-items:center; background:rgba(0,0,0,0.5); z-index:400; padding:20px; }
     .modal{ width:100%; max-width:760px; margin:0 auto; background:white; border-radius:12px; padding:22px; box-shadow:0 20px 60px rgba(2,8,23,0.2) }
 
-    /* FORCE vertical stacking inside modals and more spacing for inputs */
     .modal .modal-stack{ display:flex; flex-direction:column; gap:14px; align-items:stretch; }
     .modal .modal-stack > * { width:100%; }
     .modal .modal-stack .form-grid{ display:flex; flex-direction:column; gap:12px; }
     .modal .modal-stack label.small{ display:block; margin-bottom:6px; color:var(--muted); font-size:13px }
-    .modal .modal-stack input[type="text"], .modal .modal-stack input[type="tel"], .modal .modal-stack input[type="email"], .modal .modal-stack textarea, .modal .modal-stack select {
+    .modal .modal-stack input[type="text"], .modal .modal-stack input[type="tel"], .modal .modal-stack input[type="email"], .modal .modal-stack input[type="password"], .modal .modal-stack textarea, .modal .modal-stack select {
       width:100%; padding:12px; border-radius:8px; border:1px solid rgba(10,30,60,0.06); font-size:14px;
     }
-    .modal .modal-stack .actions-row{ display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+
+    /* Add scroll to long modal content (signup) */
+    .auth-modal .modal-inner { max-height:70vh; overflow:auto; padding-right:8px; }
 
     /* PRODUCT DETAIL PREVIEW adjustments */
     .product-modal .preview-large{ width:100%; height:320px; background:#f5f8fb; border-radius:10px; overflow:hidden; display:flex; align-items:center; justify-content:center; }
@@ -136,6 +115,7 @@
 
     /* spinner */
     .spinner { display:inline-block; width:18px; height:18px; border:3px solid rgba(0,0,0,0.08); border-top-color: rgba(255,255,255,0.9); border-radius:50%; animation:spin 0.9s linear infinite; vertical-align:middle; }
+    .spinner-dark { display:inline-block; width:18px; height:18px; border:3px solid rgba(0,0,0,0.08); border-top-color: rgba(31,111,235,1); border-radius:50%; animation:spin 0.9s linear infinite; vertical-align:middle; }
     @keyframes spin { to { transform: rotate(360deg); } }
 
     /* FOOTER */
@@ -156,7 +136,7 @@
       .card{ min-height:200px; padding:10px }
       .search-box input { width:140px }
       .modal{ padding:18px; max-width:640px; }
-      .hero-image{ display:none } /* collapse hero image on narrow screens to keep layout clean */
+      .products-section.container{ padding-left:24px; padding-right:24px; } /* adapt on smaller screens */
     }
 
     @media (max-width:780px){
@@ -166,13 +146,11 @@
       .hero-title { font-size:20px }
       .product-modal .preview-large{ height:220px }
 
-      /* show burger, hide full nav */
       .burger { display:flex; margin-right:8px }
       .mark{ width:40px; height:40px; font-size:14px }
       .logo div { line-height:1; font-size:14px }
       .logo div div { font-size:12px }
 
-      /* when nav opened on small screens: floating column */
       header.header.nav-open nav.nav{
         display:flex;
         position:absolute;
@@ -187,11 +165,12 @@
         box-shadow:0 10px 30px rgba(2,6,23,0.18);
       }
 
-      /* ensure cart is visible and compact */
-      .cart-btn { padding:8px; font-size:13px; min-width:44px }
-      .cart-badge { font-size:10px; padding:3px 6px }
-      .modal-backdrop{ padding:12px; }
-      .modal{ max-width:calc(100% - 24px); padding:16px; border-radius:10px; }
+      /* ensure hero image goes to next line on small screens */
+      .hero-inner { align-items:flex-start; }
+      .hero-inner > div { flex: 1 1 100%; }
+      .hero-inner > div:last-child { order: 2; margin-top:12px; }
+
+      .products-section.container{ padding-left:18px; padding-right:18px; } /* mobile: use default small padding */
     }
 
     @media (max-width:520px){
@@ -219,6 +198,18 @@
       .container{ max-width:1300px }
       .products-grid{ gap:22px }
     }
+
+    /* tiny dropdown for logged-in menu */
+    .auth-menu { position:relative; display:inline-block; }
+    .auth-dropdown { position:absolute; right:0; top:calc(100% + 6px); background:white; color:var(--text-dark); border-radius:8px; box-shadow:0 10px 30px rgba(0,0,0,0.12); padding:8px; display:none; min-width:180px; z-index:550; }
+    .auth-dropdown a, .auth-dropdown button { display:block; width:100%; text-align:left; padding:8px;border-radius:6px; background:transparent; border:0; cursor:pointer; color:var(--text-dark) }
+    .auth-dropdown a:hover, .auth-dropdown button:hover { background:rgba(0,0,0,0.04) }
+
+    /* helper small toast */
+    .toast {
+      position:fixed; right:18px; bottom:24px; background:rgba(0,0,0,0.8); color:white; padding:10px 14px; border-radius:10px; z-index:999;
+      box-shadow:0 8px 30px rgba(0,0,0,0.4);
+    }
   </style>
 </head>
 <body>
@@ -243,7 +234,8 @@
       </div>
 
       <nav class="nav" aria-label="Navigation principale">
-        <a href="/">Accueil</a>
+        <!-- replaced "Accueil" by auth slot -->
+        <a id="navAuth" href="#" style="font-weight:700; color:rgba(255,255,255,0.95)">Se connecter</a>
         <a href="/products.html">Produits</a>
         <a href="/about.html">À propos</a>
         <a href="/contact.html">Contact</a>
@@ -251,7 +243,11 @@
       </nav>
 
       <div class="search-box" role="search" aria-label="Recherche produits">
-        <input id="searchInput" placeholder="Rechercher : gants, seringues..." aria-label="Recherche" />
+        <!-- fake/hidden field that absorbs autofill (very important) -->
+        <input id="fake_email_absorb" type="email" name="fakeemail_autofill" autocomplete="email" style="position:absolute; left:-9999px; top:-9999px; opacity:0; width:1px; height:1px; pointer-events:none;" aria-hidden="true" />
+
+        <!-- real search input: explicit autocomplete off, initially readonly to prevent autofill -->
+        <input id="searchInput" name="search_query_no_autofill" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="Rechercher : gants, seringues..." aria-label="Recherche" readonly />
         <button id="cartBtn" class="cart-btn" title="Panier (0)">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" style="display:block"><path d="M3 3h2l.4 2M7 13h10l3-8H6.4" stroke="white" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
           <span id="cartCount" style="font-weight:800">0</span>
@@ -268,39 +264,23 @@
         <h1 class="hero-title">Commande rapide pour établissements de santé</h1>
         <p class="hero-sub">Catalogue professionnel, interface simple — ajoute au panier ou commande directement.</p>
       </div>
-
-      <!-- Right image now uses .hero-image with background + mask fade so borders are soft and it fills hero height -->
-      <div class="hero-image" id="heroImage" role="img" aria-label="Illustration médical"></div>
+      <div style="width:280px; text-align:center; padding-right:18px;">
+        <!-- image made to cover & fade edges (reduced size per request) -->
+        <div style="width:100%; height:140px; border-radius:8px; overflow:hidden; position:relative; display:flex; align-items:center; justify-content:center;">
+          <img id="heroImage" src="med.jpeg" alt="illustration" style="width:100%; height:100%; object-fit:cover; display:block; opacity:0.92; filter:contrast(1.02)" />
+          <!-- soft right-side gradient for "fondu" effect -->
+          <div style="position:absolute; right:0; top:0; bottom:0; width:28%; background:linear-gradient(90deg, rgba(255,255,255,0.0), rgba(255,255,255,0.24)); pointer-events:none"></div>
+        </div>
+      </div>
     </div>
   </section>
 
-  <script>
-    // small UI script only: toggle mobile nav when burger clicked
-    (function(){
-      document.addEventListener('DOMContentLoaded', function(){
-        var burger = document.getElementById('burgerBtn');
-        var header = document.querySelector('.header');
-        if (!burger || !header) return;
-        burger.addEventListener('click', function(e){
-          e.stopPropagation();
-          header.classList.toggle('nav-open');
-        });
-        // close nav when clicking outside header area
-        document.addEventListener('click', function(ev){
-          if (!header.classList.contains('nav-open')) return;
-          if (!header.contains(ev.target)) header.classList.remove('nav-open');
-        });
-      });
-    })();
-  </script>
-
-  <!-- SPLIT_POINT - Partie A se termine ici. Coller Partie B ci-dessous pour continuer. -->
   <!-- PRODUCTS -->
   <main class="products-section container" role="main" aria-labelledby="productsTitle">
     <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; gap:12px; flex-wrap:wrap;">
       <div style="min-width:0;">
         <h2 id="productsTitle" style="font-size:20px; font-weight:800; margin:0;">Produits en vedette</h2>
-        <div class="small muted">Articles sélectionnés — ajoute au panier ou achète directement (max 20)</div>
+        <div class="small muted">Articles sélectionnés — ajoute au panier ou achète directement</div>
       </div>
       <div style="display:flex; gap:8px; align-items:center;">
         <select id="categoryFilter" style="padding:10px 12px; border-radius:10px; border:1px solid rgba(10,30,60,0.06); background:white">
@@ -315,7 +295,6 @@
     </div>
 
     <div class="load-more-wrap">
-      <!-- after 20 featured products, this button redirects to the full products page -->
       <button id="btnLoadMore" class="btn ghost">Voir plus</button>
     </div>
   </main>
@@ -422,6 +401,98 @@
     </div>
   </div>
 
+  <!-- AUTH Modal (Connexion / Créer compte) -->
+  <div id="authModal" class="modal-backdrop auth-modal" aria-hidden="true" role="dialog" aria-label="Authentification">
+    <div class="modal" style="max-width:720px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:12px">
+        <h3 id="authTitle" style="margin:0">Connexion</h3>
+        <div style="display:flex;gap:8px;align-items:center">
+          <button id="authClose" class="btn ghost">Fermer</button>
+        </div>
+      </div>
+
+      <div class="modal-inner" style="margin-top:12px">
+        <div style="display:flex; gap:12px; margin-bottom:12px; align-items:center;">
+          <button id="tabLogin" class="btn" style="padding:8px 12px">Connexion</button>
+          <button id="tabRegister" class="btn ghost" style="padding:8px 12px">Créer un compte</button>
+        </div>
+
+        <!-- LOGIN -->
+        <div id="loginPane">
+          <div class="modal-stack">
+            <div class="form-grid">
+              <div>
+                <label class="small">Email ou téléphone</label>
+                <input id="loginEmail" type="text" placeholder="email@example.com / +228..." />
+              </div>
+              <div>
+                <label class="small">Mot de passe</label>
+                <input id="loginPassword" type="password" placeholder="Mot de passe" />
+              </div>
+              <div style="display:flex; gap:8px; align-items:center; margin-top:6px;">
+                <button id="btnLoginSubmit" class="btn">Se connecter <span id="loginSpinner" style="display:none; margin-left:8px"><span class="spinner-dark"></span></span></button>
+                <div class="small muted">Mot de passe oublié ?</div>
+              </div>
+              <div id="loginMsg" class="small muted"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- REGISTER -->
+        <div id="registerPane" style="display:none">
+          <div class="modal-stack">
+            <form id="registerForm">
+              <div style="display:flex; flex-direction:column; gap:10px;">
+                <div>
+                  <label class="small">Email</label>
+                  <input id="regEmail" type="email" required placeholder="email@example.com" />
+                </div>
+                <div>
+                  <label class="small">Téléphone</label>
+                  <input id="regPhone" type="tel" required placeholder="+228 90 00 00 00" />
+                </div>
+                <div>
+                  <label class="small">Nom complet</label>
+                  <input id="regFullName" type="text" required placeholder="Prénom Nom" />
+                </div>
+                <div>
+                  <label class="small">Nom de la société</label>
+                  <input id="regCompany" type="text" required placeholder="Nom société" />
+                </div>
+                <div>
+                  <label class="small">Adresse</label>
+                  <input id="regAddress" type="text" required placeholder="Adresse complète" />
+                </div>
+                <div style="display:flex; gap:8px;">
+                  <div style="flex:1">
+                    <label class="small">Mot de passe</label>
+                    <input id="regPassword" type="password" required placeholder="Mot de passe" />
+                  </div>
+                  <div style="flex:1">
+                    <label class="small">Confirmer mot de passe</label>
+                    <input id="regPasswordConfirm" type="password" required placeholder="Confirmer" />
+                  </div>
+                </div>
+
+                <div style="display:flex; gap:8px; align-items:center">
+                  <input id="regAccept" type="checkbox" required />
+                  <label for="regAccept" class="small">J'accepte les conditions d'utilisation</label>
+                </div>
+
+                <div style="display:flex; gap:8px; align-items:center; margin-top:6px;">
+                  <button id="btnRegisterSubmit" class="btn">Créer un compte <span id="regSpinner" style="display:none; margin-left:8px"><span class="spinner-dark"></span></span></button>
+                  <div class="small muted">Toutes les informations sont requises</div>
+                </div>
+                <div id="regMsg" class="small muted"></div>
+              </div>
+            </form>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
   <!-- FOOTER -->
   <footer class="footer" role="contentinfo">
     <div class="container footer-inner">
@@ -433,7 +504,7 @@
     </div>
   </footer>
 
-  <!-- SUPABASE + APP LOGIC (avec corrections demandées) -->
+  <!-- SUPABASE + APP LOGIC -->
   <script type="module">
     import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
@@ -445,13 +516,13 @@
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-    // DOM refs
+    // DOM refs used across code
     const productsGrid = document.getElementById('productsGrid');
     const searchInput = document.getElementById('searchInput');
+    const fakeEmailAbsorb = document.getElementById('fake_email_absorb');
     const categoryFilter = document.getElementById('categoryFilter');
     const btnClearFilters = document.getElementById('btnClearFilters');
     const btnLoadMore = document.getElementById('btnLoadMore');
-
     const cartBtn = document.getElementById('cartBtn');
     const cartCountEl = document.getElementById('cartCount');
     const cartPanel = document.getElementById('cartPanel');
@@ -459,7 +530,6 @@
     const cartList = document.getElementById('cartList');
     const cartTotalEl = document.getElementById('cartTotal');
     const btnCheckout = document.getElementById('btnCheckout');
-
     const productModal = document.getElementById('productModal');
     const prodTitle = document.getElementById('prodTitle');
     const prodShort = document.getElementById('prodShort');
@@ -483,46 +553,53 @@
     const submitLabel = document.getElementById('submitLabel');
     const submitSpinner = document.getElementById('submitSpinner');
 
-    // HISTORY modal refs
     const historyModal = document.getElementById('historyModal');
     const historyList = document.getElementById('historyList');
     const historyEmpty = document.getElementById('historyEmpty');
     const navHistory = document.getElementById('navHistory');
     const historyClose = document.getElementById('historyClose');
 
-    let PRODUCTS = [];
-    let CATEGORIES = [];
-    const CART_KEY = 'ms_cart_v1';
+    // AUTH modal refs
+    const authModal = document.getElementById('authModal');
+    const authClose = document.getElementById('authClose');
+    const tabLogin = document.getElementById('tabLogin');
+    const tabRegister = document.getElementById('tabRegister');
+    const loginPane = document.getElementById('loginPane');
+    const registerPane = document.getElementById('registerPane');
+    const navAuth = document.getElementById('navAuth');
+    const authTitle = document.getElementById('authTitle');
 
-    // pagination params
-    let productsOffset = 0;
-    const productsLimit = 20; // load 20 by page (featured max)
+    // login fields
+    const loginEmail = document.getElementById('loginEmail');
+    const loginPassword = document.getElementById('loginPassword');
+    const btnLoginSubmit = document.getElementById('btnLoginSubmit');
+    const loginSpinner = document.getElementById('loginSpinner');
+    const loginMsg = document.getElementById('loginMsg');
 
-    // Shared buy context
-    let BUY_CONTEXT = { items: [], fromCart: false };
+    // register fields
+    const registerForm = document.getElementById('registerForm');
+    const regEmail = document.getElementById('regEmail');
+    const regPhone = document.getElementById('regPhone');
+    const regFullName = document.getElementById('regFullName');
+    const regCompany = document.getElementById('regCompany');
+    const regAddress = document.getElementById('regAddress');
+    const regPassword = document.getElementById('regPassword');
+    const regPasswordConfirm = document.getElementById('regPasswordConfirm');
+    const regAccept = document.getElementById('regAccept');
+    const btnRegisterSubmit = document.getElementById('btnRegisterSubmit');
+    const regSpinner = document.getElementById('regSpinner');
+    const regMsg = document.getElementById('regMsg');
 
-    // Helpers
-    function loadCart(){ try { const raw = localStorage.getItem(CART_KEY); return raw ? JSON.parse(raw) : []; } catch(e){ return []; } }
-    function saveCart(cart){ localStorage.setItem(CART_KEY, JSON.stringify(cart)); updateCartBadge(); }
-    function updateCartBadge(){ const cart = loadCart(); const count = cart.reduce((s,i)=> s + (i.qty||0), 0); cartCountEl.textContent = String(count); cartBtn.title = `Panier (${count})`; }
-    function currencyFormat(n){ return Number(n||0).toLocaleString('fr-FR'); }
+    // small helpers
     function escapeHtml(s=''){ return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+    function flashMessage(msg, t=2200){ const el=document.createElement('div'); el.textContent=msg; el.className='toast'; document.body.appendChild(el); setTimeout(()=> el.style.opacity='0.01', t-200); setTimeout(()=> el.remove(), t); }
+    function currencyFormat(n){ return Number(n||0).toLocaleString('fr-FR'); }
 
-    function flashMessage(msg){
-      const el = document.createElement('div');
-      el.textContent = msg;
-      el.style.position = 'fixed';
-      el.style.right = '18px';
-      el.style.bottom = '100px';
-      el.style.background = 'rgba(0,0,0,0.8)';
-      el.style.color = 'white';
-      el.style.padding = '10px 14px';
-      el.style.borderRadius = '10px';
-      el.style.zIndex = 600;
-      document.body.appendChild(el);
-      setTimeout(()=> el.style.opacity = '0.01', 1600);
-      setTimeout(()=> el.remove(), 2100);
-    }
+    // CART storage
+    const CART_KEY = 'ms_cart_v1';
+    function loadCart(){ try{ const raw = localStorage.getItem(CART_KEY); return raw ? JSON.parse(raw) : []; }catch(e){ return []; } }
+    function saveCart(cart){ localStorage.setItem(CART_KEY, JSON.stringify(cart)); updateCartBadge(); }
+    function updateCartBadge(){ const cart=loadCart(); const count = cart.reduce((s,i)=> s + (i.qty||0), 0); cartCountEl.textContent = String(count); cartBtn.title = `Panier (${count})`; }
 
     // STORAGE helper: convert storage path to public url (safe)
     async function computePublicUrlFromPath(path){
@@ -534,13 +611,124 @@
       } catch (e) { console.warn('computePublicUrlFromPath err', e); return null; }
     }
 
-    // Try update product row with image_url if possible (silently)
     async function tryUpdateImageUrlInDb(productId, imageUrl, imagePath){
       if (!productId || !imageUrl) return;
       try {
         const { error } = await supabase.from('products').update({ image_url: imageUrl, image_path: imagePath }).eq('id', productId);
         if (error) console.warn('update image_url failed', error);
       } catch (e) { console.warn('tryUpdateImageUrlInDb err', e); }
+    }
+
+    // PRODUCTS load + rendering
+    let PRODUCTS = [];
+    let CATEGORIES = [];
+    let productsOffset = 0;
+    const productsLimit = 20; // load 20 vedette as requested
+
+    function renderCategories(options){
+      categoryFilter.innerHTML = '<option value="">Toutes catégories</option>';
+      for (const c of options) {
+        const o = document.createElement('option'); o.value = c.id; o.textContent = c.name; categoryFilter.appendChild(o);
+      }
+    }
+
+    function renderProducts(list, append = false){
+      if (!append) productsGrid.innerHTML = '';
+      if (!list || list.length === 0) {
+        if (!append) productsGrid.innerHTML = `<div style="grid-column:1/-1" class="small muted">Aucun produit</div>`;
+        return;
+      }
+      for (const p of list) {
+        const card = document.createElement('div'); card.className = 'card';
+        const imgUrl = p.image_url || p.image_path || '/public/nbbcl.png';
+        card.innerHTML = `
+          <div class="thumb"><div class="imgwrap"><img src="${escapeHtml(imgUrl)}" alt="${escapeHtml(p.title)}" loading="lazy" data-id="${escapeHtml(p.id)}" data-path="${escapeHtml(p.image_path || '')}"></div></div>
+          <div class="title-row"><div style="min-width:0"><div style="font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escapeHtml(p.title)}</div><div class="small muted" style="margin-top:6px">${escapeHtml(p.short_description || '')}</div></div><div class="price">${currencyFormat(p.price)} XOF</div></div>
+          <div class="small muted">Stock: <span class="stock-value">${p.stock ?? 0}</span></div>
+          <div class="actions">
+            <button class="btn btn-mini btn-add">Ajouter</button>
+            <button class="btn btn-mini btn-view">Voir</button>
+            <button class="btn-buy-cta btn-buy">Acheter</button>
+          </div>
+        `;
+        card.querySelector('.btn-add').addEventListener('click', ()=> addToCart(p, 1));
+        card.querySelector('.btn-view').addEventListener('click', ()=> openProductModal(p));
+        card.querySelector('.btn-buy').addEventListener('click', ()=> openBuyModalWithProduct(p));
+        productsGrid.appendChild(card);
+
+        if (!p.image_url && p.image_path) {
+          (async () => {
+            try {
+              const url = await computePublicUrlFromPath(p.image_path);
+              if (url) {
+                const img = card.querySelector(`img[data-id="${escapeHtml(p.id)}"]`);
+                if (img) img.src = url;
+                tryUpdateImageUrlInDb(p.id, url, p.image_path);
+                const cart = loadCart();
+                let mutated = false;
+                for (let it of cart) {
+                  if (it.productId === p.id && (!it.image_url || it.image_url === p.image_path)) {
+                    it.image_url = url;
+                    mutated = true;
+                  }
+                }
+                if (mutated) saveCart(cart);
+              }
+            } catch (e) { console.warn('resolve img err', e); }
+          })();
+        }
+      }
+    }
+
+    // Instead of infinite "load more", after first load of 20 let's redirect to products page when clicking Voir plus
+    function wireLoadMoreAsRedirect(){
+      btnLoadMore.textContent = 'Voir plus';
+      btnLoadMore.onclick = () => { window.location.href = '/products.html'; };
+    }
+
+    async function loadCategories(){
+      try {
+        const { data, error } = await supabase.from('categories').select('id,name').eq('is_active', true).order('name',{ ascending:true });
+        if (error) { console.warn('categories err', error); return; }
+        CATEGORIES = data || [];
+        renderCategories(CATEGORIES);
+      } catch (err) { console.error(err); }
+    }
+
+    async function loadProducts(reset = false){
+      if (reset) {
+        productsOffset = 0;
+        PRODUCTS = [];
+      }
+      productsGrid.innerHTML = '<div style="grid-column:1/-1">Chargement…</div>';
+      try {
+        const from = productsOffset;
+        const to = productsOffset + productsLimit - 1;
+        let qb = supabase.from('products').select('*').order('created_at',{ ascending:false }).range(from,to);
+
+        const q = (searchInput.value || '').trim();
+        if (q) qb = qb.ilike('title', `%${q}%`);
+        if (categoryFilter.value) qb = qb.eq('category_id', categoryFilter.value);
+
+        const { data, error } = await qb;
+        if (error) {
+          console.warn('products fetch err', error);
+          productsGrid.innerHTML = `<div style="grid-column:1/-1" class="small muted">Erreur chargement</div>`;
+          return;
+        }
+
+        const fetched = data || [];
+        PRODUCTS = PRODUCTS.concat(fetched);
+        renderProducts(fetched, /*append=*/ productsOffset > 0);
+
+        // after loading the first "page" we convert "Voir plus" into redirect to products.html as requested
+        wireLoadMoreAsRedirect();
+
+        productsOffset += fetched.length;
+      } catch (err) {
+        console.error('loadProducts err', err);
+        productsGrid.innerHTML = `<div style="grid-column:1/-1" class="small muted">Erreur</div>`;
+      }
     }
 
     // CART functions
@@ -600,62 +788,6 @@
       renderCartPanel();
     }
 
-    // PRODUCTS render & pagination
-    function renderProducts(list, append = false){
-      if (!append) productsGrid.innerHTML = '';
-      if (!list || list.length === 0) {
-        if (!append) productsGrid.innerHTML = `<div style="grid-column:1/-1" class="small muted">Aucun produit</div>`;
-        return;
-      }
-      for (const p of list) {
-        const card = document.createElement('div'); card.className = 'card';
-        const imgUrl = p.image_url || p.image_path || '/public/nbbcl.png';
-        card.innerHTML = `
-          <div class="thumb"><div class="imgwrap"><img src="${escapeHtml(imgUrl)}" alt="${escapeHtml(p.title)}" loading="lazy" data-id="${escapeHtml(p.id)}" data-path="${escapeHtml(p.image_path || '')}"></div></div>
-          <div class="title-row"><div style="min-width:0"><div style="font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escapeHtml(p.title)}</div><div class="small muted" style="margin-top:6px">${escapeHtml(p.short_description || '')}</div></div><div class="price">${currencyFormat(p.price)} XOF</div></div>
-          <div class="small muted">Stock: <span class="stock-value">${p.stock ?? 0}</span></div>
-          <div class="actions">
-            <button class="btn btn-mini btn-add">Ajouter</button>
-            <button class="btn btn-mini btn-view">Voir</button>
-            <button class="btn-buy-cta btn-buy">Acheter</button>
-          </div>
-        `;
-        card.querySelector('.btn-add').addEventListener('click', ()=> addToCart(p, 1));
-        card.querySelector('.btn-view').addEventListener('click', ()=> openProductModal(p));
-        card.querySelector('.btn-buy').addEventListener('click', ()=> openBuyModalWithProduct(p));
-        productsGrid.appendChild(card);
-
-        if (!p.image_url && p.image_path) {
-          (async () => {
-            try {
-              const url = await computePublicUrlFromPath(p.image_path);
-              if (url) {
-                const img = card.querySelector(`img[data-id="${escapeHtml(p.id)}"]`);
-                if (img) img.src = url;
-                tryUpdateImageUrlInDb(p.id, url, p.image_path);
-                const cart = loadCart();
-                let mutated = false;
-                for (let it of cart) {
-                  if (it.productId === p.id && (!it.image_url || it.image_url === p.image_path)) {
-                    it.image_url = url;
-                    mutated = true;
-                  }
-                }
-                if (mutated) saveCart(cart);
-              }
-            } catch (e) { console.warn('resolve img err', e); }
-          })();
-        }
-      }
-    }
-
-    function renderCategories(options){
-      categoryFilter.innerHTML = '<option value="">Toutes catégories</option>';
-      for (const c of options) {
-        const o = document.createElement('option'); o.value = c.id; o.textContent = c.name; categoryFilter.appendChild(o);
-      }
-    }
-
     // product modal
     async function openProductModal(p){
       prodTitle.textContent = p.title || 'Produit';
@@ -688,6 +820,7 @@
     }
 
     // buy modal functions
+    let BUY_CONTEXT = { items: [], fromCart: false };
     function openBuyModalWithProduct(product){
       BUY_CONTEXT = { items: [{ productId: product.id, qty: 1, title: product.title, price: Number(product.price||0), image_url: product.image_url || product.image_path || '/public/nbbcl.png' }], fromCart: false };
       populateBuySummary();
@@ -715,7 +848,6 @@
       buySummary.innerHTML = `${lines}${lines ? '<hr style="border:none;border-top:1px solid rgba(10,30,60,0.06);margin:8px 0">' : ''}<div style="display:flex;justify-content:space-between"><strong>Total</strong><strong>${currencyFormat(total)} XOF</strong></div>`;
     }
 
-    // qty controls for single-product purchase inside buy modal
     function prepareQtyControls(){
       const items = BUY_CONTEXT.items || [];
       if (!items || items.length !== 1) { clearQtyControls(); return; }
@@ -745,7 +877,7 @@
       return `MS-${dd}-${rand}`;
     }
 
-    // SEND EMAIL (client-side SMTP via SMTPJS)
+    // SMTP config left intact (user requested not to change)
     const SMTP_HOST = 'SMTPHosting.com';
     const SMTP_PORT = '465';
     const SMTP_USERNAME = 'profzzen@gmail.com';
@@ -785,7 +917,7 @@
       } catch (err) { console.error('sendOrderEmail err', err); }
     }
 
-    // Submit order
+    // Submit order with stock decrement
     let processingOrder = false;
     async function submitOrder(evt){
       evt && evt.preventDefault();
@@ -843,36 +975,21 @@
         const { data: itemsRes, error: itemsErr } = await supabase.from('order_items').insert(itemsPayload).select();
         if (itemsErr) { console.error('order_items insert err', itemsErr); }
 
-        // === NEW: robust stock decrement ===
-        // Perform updates in parallel and await all, log problems.
+        // decrement stock for each product (await each update and log errors)
         try {
-          const updatePromises = (items || []).map(async (it) => {
+          await Promise.all(items.map(async it => {
             try {
-              // fetch current stock
-              const prodId = it.productId;
-              const { data: prodData, error: prodErr } = await supabase.from('products').select('id,stock').eq('id', prodId).single();
-              if (prodErr || !prodData) {
-                console.warn('product fetch failed for stock update', prodErr, prodId);
-                return;
-              }
-              const currentStock = Number(prodData.stock || 0);
-              const newStock = Math.max(0, currentStock - Number(it.qty || 0));
-              const { data: updated, error: upErr } = await supabase.from('products').update({ stock: newStock }).eq('id', prodData.id).select().single();
-              if (upErr) {
-                console.warn('stock update failed for', prodData.id, upErr);
-              } else {
-                console.debug('stock updated for', prodData.id, '->', newStock);
-              }
-            } catch (e) {
-              console.warn('stock update item err', e);
-            }
-          });
-          await Promise.all(updatePromises);
-        } catch (e) {
-          console.warn('stock update batch err', e);
-        }
+              const { data: prodData, error: pErr } = await supabase.from('products').select('id,stock').eq('id', it.productId).single();
+              if (pErr || !prodData) { console.warn('product fetch failed', pErr); return; }
+              const newStock = (Number(prodData.stock || 0) - Number(it.qty || 0));
+              const safeStock = newStock < 0 ? 0 : newStock;
+              const { error: upErr } = await supabase.from('products').update({ stock: safeStock }).eq('id', it.productId);
+              if (upErr) console.warn('stock update failed (client):', upErr);
+            } catch (e) { console.warn('stock decrement err', e); }
+          }));
+        } catch (e) { console.warn('stock Promise.all err', e); }
 
-        // Edge processing (optional)
+        // Edge option - unchanged
         let edgeOk = false;
         if (EDGE_PROCESS_ORDER_URL) {
           try {
@@ -889,7 +1006,6 @@
           } catch (edgeErr) { console.warn('Edge call failed', edgeErr); }
         }
 
-        // Save to local history
         try {
           const histKey = 'ms_orders_history_v1';
           const raw = localStorage.getItem(histKey);
@@ -909,28 +1025,12 @@
           localStorage.setItem(histKey, JSON.stringify(hist));
         } catch (e) { /* ignore */ }
 
-        // try sending an email (best-effort)
-        try {
-          const emailMeta = {
-            id: orderId,
-            order_number,
-            order_name: name,
-            phone,
-            shipping_address: address,
-            total,
-            currency: 'XOF'
-          };
-          sendOrderEmail(emailMeta, items);
-        } catch (e) { console.warn('sendOrderEmail failed', e); }
+        try { sendOrderEmail({ id:orderId, order_number, order_name:name, phone, shipping_address: address, total, currency:'XOF'}, items); } catch(e){ console.warn(e); }
 
-        // clear cart if coming from cart
         if (BUY_CONTEXT.fromCart) localStorage.removeItem(CART_KEY);
         updateCartBadge();
         renderCartPanel();
-
-        // reload featured products to reflect updated stock
-        await loadProducts(true);
-
+        await loadProducts(true); // refresh product list to show updated stocks
         showBuyModal(false);
         flashMessage('Commande créée — numéro: ' + order_number);
       } catch (err) {
@@ -943,75 +1043,7 @@
       }
     }
 
-    // load categories & paginated products
-    async function loadCategories(){
-      try {
-        const { data, error } = await supabase.from('categories').select('id,name').eq('is_active', true).order('name',{ ascending:true });
-        if (error) { console.warn('categories err', error); return; }
-        CATEGORIES = data || [];
-        renderCategories(CATEGORIES);
-      } catch (err) { console.error(err); }
-    }
-
-    async function loadProducts(reset = false){
-      if (reset) {
-        productsOffset = 0;
-        PRODUCTS = [];
-      }
-      // For featured: always show up to productsLimit items (20).
-      productsGrid.innerHTML = '<div style="grid-column:1/-1">Chargement…</div>';
-
-      try {
-        const from = productsOffset;
-        const to = productsOffset + productsLimit - 1;
-        let qb = supabase.from('products').select('*').order('created_at',{ ascending:false }).range(from,to);
-
-        const q = searchInput.value.trim();
-        if (q) qb = qb.ilike('title', `%${q}%`);
-        if (categoryFilter.value) qb = qb.eq('category_id', categoryFilter.value);
-
-        const { data, error } = await qb;
-        if (error) {
-          console.warn('products fetch err', error);
-          productsGrid.innerHTML = `<div style="grid-column:1/-1" class="small muted">Erreur chargement</div>`;
-          return;
-        }
-
-        const fetched = data || [];
-        PRODUCTS = PRODUCTS.concat(fetched);
-        renderProducts(fetched, /*append=*/ productsOffset > 0);
-
-        // === BEHAVIOR: for featured, we do not load more here.
-        // the "Voir plus" button redirects to products.html (full catalogue)
-        btnLoadMore.style.display = '';
-        btnLoadMore.textContent = 'Voir plus';
-        productsOffset += fetched.length;
-      } catch (err) {
-        console.error('loadProducts err', err);
-        productsGrid.innerHTML = `<div style="grid-column:1/-1" class="small muted">Erreur</div>`;
-      }
-    }
-
-    // EVENTS (existing)
-    searchInput.addEventListener('keydown', (e)=> { if (e.key === 'Enter') { productsOffset = 0; loadProducts(true); } });
-    categoryFilter.addEventListener('change', ()=> { productsOffset = 0; loadProducts(true); });
-    btnClearFilters.addEventListener('click', ()=> { categoryFilter.value = ''; searchInput.value = ''; productsOffset = 0; loadProducts(true); });
-
-    // NOTE: change btnLoadMore to redirect to the full products page (as requested)
-    btnLoadMore.addEventListener('click', ()=> { window.location.href = 'products.html'; });
-
-    cartBtn.addEventListener('click', ()=>{ 
-      const visible = cartPanel.style.display === 'block';
-      if (!visible) { renderCartPanel(); cartPanel.style.display = 'block'; }
-      else cartPanel.style.display = 'none';
-    });
-    btnCloseCart.addEventListener('click', ()=> cartPanel.style.display = 'none');
-    btnCheckout.addEventListener('click', ()=> openBuyModalFromCart());
-
-    cancelBuy.addEventListener('click', ()=> { showBuyModal(false); });
-    buyForm.addEventListener('submit', submitOrder);
-
-    // ------- HISTORY modal functions (reads localStorage 'ms_orders_history_v1') -------
+    // HISTORY modal functions
     function loadLocalHistory(){
       try {
         const raw = localStorage.getItem('ms_orders_history_v1');
@@ -1060,19 +1092,348 @@
     historyClose.addEventListener('click', closeHistoryModal);
     navHistory.addEventListener('click', (e) => { e.preventDefault(); openHistoryModal(); });
 
-    // init
+    // ---------------------------
+    // AUTH UI and logic
+    // ---------------------------
+
+    // helper: compute SHA-256 hex for password hashing (client-side)
+    async function hashSha256Hex(msg){
+      const enc = new TextEncoder();
+      const data = enc.encode(msg);
+      const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+      const hashArray = Array.from(new Uint8Array(hashBuffer));
+      const hashHex = hashArray.map(b => b.toString(16).padStart(2,'0')).join('');
+      return hashHex;
+    }
+
+    // show / hide auth modal, and switch panes
+    function showAuthModal(show, pane='login'){
+      authModal.style.display = show ? 'grid' : 'none';
+      authModal.setAttribute('aria-hidden', show ? 'false' : 'true');
+      if (show) {
+        if (pane === 'register') { switchToRegister(); } else { switchToLogin(); }
+      }
+    }
+    function switchToLogin(){
+      loginPane.style.display = '';
+      registerPane.style.display = 'none';
+      authTitle.textContent = 'Connexion';
+      tabLogin.classList.remove('btn-ghost'); tabLogin.classList.add('btn');
+      tabRegister.classList.remove('btn'); tabRegister.classList.add('btn','ghost');
+    }
+    function switchToRegister(){
+      loginPane.style.display = 'none';
+      registerPane.style.display = '';
+      authTitle.textContent = 'Créer un compte';
+      tabRegister.classList.remove('btn-ghost'); tabRegister.classList.add('btn');
+      tabLogin.classList.remove('btn'); tabLogin.classList.add('btn','ghost');
+    }
+
+    tabLogin.addEventListener('click', ()=> switchToLogin());
+    tabRegister.addEventListener('click', ()=> switchToRegister());
+    authClose.addEventListener('click', ()=> showAuthModal(false));
+
+    // open auth modal behaviour: navAuth click
+    let loggedUser = null;
+    function showLoggedState(user){
+      // user: { id, email, ... } or null
+      loggedUser = user;
+      // remove any existing auth-menu wrapper to avoid duplicates
+      const existingMenu = document.querySelector('.auth-menu');
+      if (existingMenu) existingMenu.remove();
+
+      if (!user) {
+        navAuth.textContent = 'Se connecter';
+        navAuth.href = '#';
+        navAuth.onclick = (e) => { e.preventDefault(); showAuthModal(true,'login'); };
+        return;
+      }
+      // show email text (but never place it into searchInput)
+      navAuth.textContent = user.email || (user.id || 'Connecté');
+      navAuth.href = '#';
+      navAuth.onclick = (e) => { e.preventDefault(); toggleAuthDropdown(); };
+      ensureAuthDropdown(user);
+    }
+
+    function ensureAuthDropdown(user){
+      // Append a small dropdown next to navAuth (if not created)
+      let menuWrap = navAuth.parentElement.querySelector('.auth-menu');
+      if (!menuWrap) {
+        menuWrap = document.createElement('span'); menuWrap.className = 'auth-menu';
+        // insert directly after navAuth
+        navAuth.parentElement.insertBefore(menuWrap, navAuth.nextSibling);
+      }
+      // create dropdown content
+      let drop = menuWrap.querySelector('.auth-dropdown');
+      if (!drop) {
+        drop = document.createElement('div'); drop.className='auth-dropdown';
+        drop.innerHTML = `<div style="font-weight:700; padding:6px 8px">${escapeHtml(user.email || user.id)}</div>
+          <div style="border-top:1px solid rgba(0,0,0,0.04); margin-top:6px"></div>
+          <button id="btnSignOutSmall">Se déconnecter</button>`;
+        menuWrap.appendChild(drop);
+        menuWrap.querySelector('#btnSignOutSmall').addEventListener('click', async ()=>{
+          await supabase.auth.signOut();
+          showLoggedState(null);
+          flashMessage('Déconnecté');
+        });
+      }
+      drop.style.display = 'none';
+    }
+
+    function toggleAuthDropdown(){
+      const menuWrap = navAuth.parentElement.querySelector('.auth-menu');
+      if (!menuWrap) return;
+      const drop = menuWrap.querySelector('.auth-dropdown');
+      if (!drop) return;
+      drop.style.display = drop.style.display === 'block' ? 'none' : 'block';
+    }
+
+    // Close auth dropdown on outside click
+    document.addEventListener('click', (e) => {
+      const menuWrap = document.querySelector('.auth-menu');
+      if (!menuWrap) return;
+      const drop = menuWrap.querySelector('.auth-dropdown');
+      if (!drop) return;
+      if (!menuWrap.contains(e.target) && e.target !== navAuth) drop.style.display = 'none';
+    });
+
+    // Login attempt
+    btnLoginSubmit.addEventListener('click', async (e) => {
+      e.preventDefault();
+      loginMsg.textContent = '';
+      const identifier = (loginEmail.value || '').trim();
+      const password = (loginPassword.value || '').trim();
+      if (!identifier || !password) { loginMsg.textContent = 'Email/phone + mot de passe requis'; return; }
+
+      // show spinner
+      btnLoginSubmit.disabled = true; loginSpinner.style.display = 'inline-block';
+
+      try {
+        const { data, error } = await supabase.auth.signInWithPassword({ email: identifier, password });
+        if (error) {
+          console.warn('login err', error);
+          loginMsg.textContent = error.message || 'Échec connexion';
+          return;
+        }
+        const user = data.user;
+        showLoggedState({ id: user.id, email: user.email });
+        showAuthModal(false);
+        flashMessage('Connexion réussie');
+      } catch (err) {
+        console.error('login unexpected err', err);
+        loginMsg.textContent = 'Erreur connexion (voir console)';
+      } finally {
+        btnLoginSubmit.disabled = false; loginSpinner.style.display = 'none';
+      }
+    });
+
+    // Register attempt
+    btnRegisterSubmit.addEventListener('click', async (e) => {
+      e.preventDefault();
+      regMsg.textContent = '';
+
+      const email = (regEmail.value || '').trim();
+      const phone = (regPhone.value || '').trim();
+      const full_name = (regFullName.value || '').trim();
+      const company_name = (regCompany.value || '').trim();
+      const address = (regAddress.value || '').trim();
+      const pw = (regPassword.value || '').trim();
+      const pwc = (regPasswordConfirm.value || '').trim();
+      const accept = regAccept.checked;
+
+      if (!email || !phone || !full_name || !company_name || !address || !pw || !pwc) { regMsg.textContent = 'Tous les champs sont requis'; return; }
+      if (pw !== pwc) { regMsg.textContent = 'Les mots de passe ne correspondent pas'; return; }
+      if (!accept) { regMsg.textContent = 'Vous devez accepter les conditions'; return; }
+
+      // spinner
+      btnRegisterSubmit.disabled = true; regSpinner.style.display = 'inline-block';
+
+      try {
+        // create auth user
+        const { data, error } = await supabase.auth.signUp({ email, password: pw });
+        if (error) {
+          console.warn('auth.signUp err', error);
+          regMsg.textContent = error.message || 'Erreur création compte';
+          return;
+        }
+        const user = data.user;
+        if (!user || !user.id) {
+          regMsg.textContent = 'Impossible de créer le compte (id manquant)';
+          return;
+        }
+
+        // compute client-side password hash (SHA-256 hex) to store in users.password_hash (if desired)
+        let password_hash = null;
+        try { password_hash = await hashSha256Hex(pw); } catch(e){ console.warn('hash err', e); password_hash = null; }
+
+        // Check if confirmation required: if yes inform user to confirm email
+        const needsConfirmation = Boolean(data?.user?.confirmation_sent_at && !data?.user?.confirmed_at);
+        if (needsConfirmation) {
+          regMsg.textContent = 'Un e-mail de confirmation a été envoyé. Veuillez confirmer votre adresse e-mail avant de vous connecter.';
+          showAuthModal(false);
+          flashMessage('Vérifiez votre e-mail pour confirmer votre compte');
+          return;
+        }
+
+        // otherwise insert profile
+        const now = new Date().toISOString();
+        const profile = {
+          id: user.id,
+          email,
+          phone,
+          full_name,
+          company_name,
+          address,
+          password_hash,
+          created_at: now,
+          updated_at: now
+        };
+
+        const { data: inserted, error: insertErr } = await supabase.from('users').insert([profile]).select().single();
+        if (insertErr) {
+          console.warn('users insert err', insertErr);
+          regMsg.innerHTML = `Compte créé (auth) — mais profil non créé: ${escapeHtml(insertErr.message || String(insertErr))} <span class="small muted" style="display:block">Code: ${escapeHtml(insertErr.code || '')}</span>`;
+          showLoggedState({ id: user.id, email: user.email });
+          showAuthModal(false);
+          flashMessage('Compte créé (auth) — profil non inséré');
+          return;
+        }
+
+        showLoggedState({ id: user.id, email: user.email });
+        showAuthModal(false);
+        flashMessage('Inscription réussie');
+      } catch (err) {
+        console.error('register unexpected err', err);
+        regMsg.textContent = 'Erreur inscription (voir console)';
+      } finally {
+        btnRegisterSubmit.disabled = false; regSpinner.style.display = 'none';
+      }
+    });
+
+    // If already logged in on load show state
+    (async function checkAuthOnLoad(){
+      try {
+        const { data } = await supabase.auth.getUser();
+        if (data?.user) {
+          showLoggedState({ id: data.user.id, email: data.user.email });
+        } else {
+          showLoggedState(null);
+        }
+      } catch (e) {
+        console.warn('auth.getUser err', e);
+      }
+    })();
+
+    // if user clicks navAuth when not logged, open auth modal (but showLoggedState handles logged-in toggle)
+    navAuth.addEventListener('click', (e) => {
+      e.preventDefault();
+      if (!loggedUser) { showAuthModal(true, 'login'); }
+    });
+
+    // logout functionality via small menu created earlier
+    document.addEventListener('click', async (e) => {
+      if (e.target && e.target.id === 'btnSignOutSmall') {
+        e.preventDefault();
+        await supabase.auth.signOut();
+        showLoggedState(null);
+        flashMessage('Déconnecté');
+      }
+    });
+
+    // other small UI interactions
+    const burger = document.getElementById('burgerBtn');
+    const header = document.querySelector('.header');
+    if (burger && header) {
+      burger.addEventListener('click', function(e){ e.stopPropagation(); header.classList.toggle('nav-open'); });
+      document.addEventListener('click', function(ev){ if (!header.classList.contains('nav-open')) return; if (!header.contains(ev.target)) header.classList.remove('nav-open'); });
+    }
+
+    // wire various buttons/events
+    searchInput.addEventListener('keydown', (e)=> { if (e.key === 'Enter') { productsOffset = 0; loadProducts(true); } });
+    categoryFilter.addEventListener('change', ()=> { productsOffset = 0; loadProducts(true); });
+    btnClearFilters.addEventListener('click', ()=> { categoryFilter.value = ''; searchInput.value = ''; productsOffset = 0; loadProducts(true); });
+    btnLoadMore.addEventListener('click', ()=> { window.location.href = '/products.html'; });
+
+    cartBtn.addEventListener('click', ()=>{ 
+      const visible = cartPanel.style.display === 'block';
+      if (!visible) { renderCartPanel(); cartPanel.style.display = 'block'; }
+      else cartPanel.style.display = 'none';
+    });
+    btnCloseCart.addEventListener('click', ()=> cartPanel.style.display = 'none');
+    btnCheckout.addEventListener('click', ()=> openBuyModalFromCart());
+
+    cancelBuy.addEventListener('click', ()=> { showBuyModal(false); });
+    buyForm.addEventListener('submit', submitOrder);
+
+    // product modal close / interactions are already set earlier
+
+    // --- Robust anti-autofill logic for the search input ---
+    function ensureSearchInputNotAutofilled(){
+      try {
+        // Step 1: ensure hidden absorber exists and is before focusable inputs (we placed it in markup)
+        if (fakeEmailAbsorb) {
+          // make sure it's not focusable
+          fakeEmailAbsorb.tabIndex = -1;
+        }
+
+        // Step 2: clear value on load & pageshow
+        if (searchInput) {
+          searchInput.value = '';
+          // Keep readonly initially to avoid aggressive autofill
+          searchInput.readOnly = true;
+
+          // Remove readonly when user interacts (allow typing)
+          const enableEditing = () => {
+            try { searchInput.readOnly = false; } catch(e) {}
+            // if the browser filled something that looks like an email, clear it
+            if (searchInput.value && searchInput.value.includes('@')) searchInput.value = '';
+          };
+          // Remove readonly on focus or mousedown/touchstart
+          searchInput.addEventListener('focus', enableEditing, { once:true });
+          searchInput.addEventListener('mousedown', enableEditing, { once:true });
+          searchInput.addEventListener('touchstart', enableEditing, { once:true });
+
+          // Extra: clear on focus if value looks like an email
+          searchInput.addEventListener('focus', () => { if (searchInput.value && searchInput.value.includes('@')) searchInput.value = ''; });
+
+          // Some browsers autofill after load; try clearing shortly after load
+          setTimeout(()=> {
+            try {
+              if (searchInput && searchInput.value && searchInput.value.includes('@')) searchInput.value = '';
+              // allow typing after short delay so user doesn't have to click twice
+              searchInput.readOnly = false;
+            } catch(e) {}
+          }, 450);
+
+          // On page show (when navigating back) also clear
+          window.addEventListener('pageshow', () => {
+            try { if (searchInput) { searchInput.value = ''; searchInput.readOnly = false; } } catch(e){}
+          });
+
+          // Safety: observe attribute changes (if browser forces value) and clear if email-like appears
+          const obs = new MutationObserver(()=> {
+            try { if (searchInput && searchInput.value && searchInput.value.includes('@')) searchInput.value = ''; } catch(e){}
+          });
+          obs.observe(searchInput, { attributes: true, attributeFilter: ['value'] });
+
+          // final guard: every 700ms for a short period, ensure it's empty if an email appears (cleans up very aggressive agents)
+          let guardCount = 0;
+          const guardInterval = setInterval(()=> {
+            if (!searchInput) { clearInterval(guardInterval); return; }
+            if (searchInput.value && searchInput.value.includes('@')) searchInput.value = '';
+            guardCount++;
+            if (guardCount > 8) clearInterval(guardInterval);
+          }, 700);
+        }
+      } catch(e) { console.warn('ensureSearchInputNotAutofilled err', e); }
+    }
+
+    // init load
     (async function init(){
       updateCartBadge();
-
-      // set hero image background (keeps layout + accessibility; fallback to <img> hidden on narrow screens)
-      const heroEl = document.getElementById('heroImage');
-      if (heroEl) {
-        // try to use a nicer background, fallback if not available
-        heroEl.style.backgroundImage = "url('med.jpeg')";
-      }
-
+      ensureSearchInputNotAutofilled();
       await loadCategories();
-      await loadProducts(true); // reset load (first 20 featured)
+      await loadProducts(true);
     })();
 
   </script>
