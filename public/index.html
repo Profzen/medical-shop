@@ -113,6 +113,9 @@
     .product-modal .preview-large .imgwrap{ width:100%; height:100%; display:flex; align-items:center; justify-content:center; overflow:hidden; }
     .product-modal .preview-large img{ display:block; margin:auto; max-width:100%; max-height:100%; width:auto; height:auto; object-fit:contain }
 
+    /* Compact mode for buy modal (avoid huge height; adds internal scroll) */
+    .buy-modal.compact { max-height:70vh; overflow:auto; padding-right:8px; }
+
     /* spinner */
     .spinner { display:inline-block; width:18px; height:18px; border:3px solid rgba(0,0,0,0.08); border-top-color: rgba(255,255,255,0.9); border-radius:50%; animation:spin 0.9s linear infinite; vertical-align:middle; }
     .spinner-dark { display:inline-block; width:18px; height:18px; border:3px solid rgba(0,0,0,0.08); border-top-color: rgba(31,111,235,1); border-radius:50%; animation:spin 0.9s linear infinite; vertical-align:middle; }
@@ -247,7 +250,7 @@
         <input id="fake_email_absorb" type="email" name="fakeemail_autofill" autocomplete="email" style="position:absolute; left:-9999px; top:-9999px; opacity:0; width:1px; height:1px; pointer-events:none;" aria-hidden="true" />
 
         <!-- real search input: explicit autocomplete off, initially readonly to prevent autofill -->
-        <input id="searchInput" name="search_query_no_autofill" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="Rechercher : gants, seringues..." aria-label="Recherche" readonly />
+        <input id="searchInput" type="search" inputmode="search" name="search_query_no_autofill" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="Rechercher : gants, seringues..." aria-label="Recherche" readonly />
         <button id="cartBtn" class="cart-btn" title="Panier (0)">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" style="display:block"><path d="M3 3h2l.4 2M7 13h10l3-8H6.4" stroke="white" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
           <span id="cartCount" style="font-weight:800">0</span>
@@ -338,10 +341,14 @@
 
   <!-- Buy modal (champs empilés verticalement ; récap sous les champs) -->
   <div id="buyModal" class="modal-backdrop" aria-hidden="true" role="dialog" aria-label="Modal commande">
-    <div class="modal">
+    <div class="modal buy-modal">
       <div class="modal-stack">
-        <div>
+        <div style="display:flex; justify-content:space-between; align-items:center; gap:8px;">
           <h3 id="buyModalTitle" style="margin-top:0">Finaliser la commande</h3>
+          <!-- toggle scroll/compact mode button to avoid huge modal -->
+          <div>
+            <button id="buyScrollBtn" class="btn ghost" type="button" title="Activer le défilement si la modal est longue">Activer défilement</button>
+          </div>
         </div>
 
         <form id="buyForm" style="width:100%;">
@@ -377,7 +384,7 @@
 
         <!-- Récapitulatif placé sous les champs pour plus d'espace d'entrée -->
         <div style="width:100%;">
-          <div class="small muted">Récapitulatif</div>
+          <div class="small muted">Récapitulatf</div>
           <div id="buySummary" style="margin-top:10px; background:#fbfdff; padding:12px; border-radius:8px; border:1px solid rgba(10,30,60,0.03)"></div>
         </div>
       </div>
@@ -541,6 +548,7 @@
     const prodClose = document.getElementById('prodClose');
 
     const buyModal = document.getElementById('buyModal');
+    const buyModalInner = buyModal.querySelector('.modal');
     const buyForm = document.getElementById('buyForm');
     const buyerName = document.getElementById('buyerName');
     const buyerPhone = document.getElementById('buyerPhone');
@@ -552,6 +560,7 @@
     const submitOrderBtn = document.getElementById('submitOrder');
     const submitLabel = document.getElementById('submitLabel');
     const submitSpinner = document.getElementById('submitSpinner');
+    const buyScrollBtn = document.getElementById('buyScrollBtn');
 
     const historyModal = document.getElementById('historyModal');
     const historyList = document.getElementById('historyList');
@@ -646,9 +655,9 @@
           <div class="title-row"><div style="min-width:0"><div style="font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escapeHtml(p.title)}</div><div class="small muted" style="margin-top:6px">${escapeHtml(p.short_description || '')}</div></div><div class="price">${currencyFormat(p.price)} XOF</div></div>
           <div class="small muted">Stock: <span class="stock-value">${p.stock ?? 0}</span></div>
           <div class="actions">
-            <button class="btn btn-mini btn-add">Ajouter</button>
-            <button class="btn btn-mini btn-view">Voir</button>
-            <button class="btn-buy-cta btn-buy">Acheter</button>
+            <button class="btn btn-mini btn-add" type="button">Ajouter</button>
+            <button class="btn btn-mini btn-view" type="button">Voir</button>
+            <button class="btn-buy-cta btn-buy" type="button">Acheter</button>
           </div>
         `;
         card.querySelector('.btn-add').addEventListener('click', ()=> addToCart(p, 1));
@@ -760,9 +769,9 @@
             <div class="small muted">${currencyFormat(item.price)} XOF × ${item.qty}</div>
           </div>
           <div style="display:flex; flex-direction:column; gap:6px;">
-            <button class="btn ghost small dec">-</button>
-            <button class="btn ghost small inc">+</button>
-            <button class="btn ghost small rem">✕</button>
+            <button class="btn ghost small dec" type="button">-</button>
+            <button class="btn ghost small inc" type="button">+</button>
+            <button class="btn ghost small rem" type="button">✕</button>
           </div>`;
         row.querySelector('.dec').addEventListener('click', ()=> changeCartQty(item.productId, -1));
         row.querySelector('.inc').addEventListener('click', ()=> changeCartQty(item.productId, +1));
@@ -819,6 +828,8 @@
       productModal.setAttribute('aria-hidden','true');
     }
 
+    // --- PARTIE 2 (achats, envoi email, historique, auth...) ---
+
     // buy modal functions
     let BUY_CONTEXT = { items: [], fromCart: false };
     function openBuyModalWithProduct(product){
@@ -853,14 +864,18 @@
       if (!items || items.length !== 1) { clearQtyControls(); return; }
       const it = items[0];
       qtyControls.innerHTML = '';
-      const dec = document.createElement('button'); dec.className = 'btn ghost'; dec.textContent = '-';
+      const dec = document.createElement('button'); dec.className = 'btn ghost'; dec.textContent = '-'; dec.type = 'button';
       const inp = document.createElement('div'); inp.style.minWidth = '44px'; inp.style.textAlign = 'center'; inp.style.fontWeight = '700'; inp.textContent = String(it.qty);
-      const inc = document.createElement('button'); inc.className = 'btn'; inc.textContent = '+';
-      dec.addEventListener('click', ()=> {
+      const inc = document.createElement('button'); inc.className = 'btn'; inc.textContent = '+'; inc.type = 'button';
+
+      // Important: use non-submit buttons and preventDefault just in case
+      dec.addEventListener('click', (ev)=> {
+        ev.preventDefault();
         if (it.qty <= 1) return;
         it.qty -= 1; inp.textContent = String(it.qty); populateBuySummary();
       });
-      inc.addEventListener('click', ()=> {
+      inc.addEventListener('click', (ev)=> {
+        ev.preventDefault();
         it.qty += 1; inp.textContent = String(it.qty); populateBuySummary();
       });
       qtyControls.appendChild(dec);
@@ -1428,6 +1443,19 @@
       } catch(e) { console.warn('ensureSearchInputNotAutofilled err', e); }
     }
 
+    // Handle buyModal compact toggle button
+    if (buyScrollBtn) {
+      buyScrollBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        const modal = buyModalInner;
+        if (!modal) return;
+        const isCompact = modal.classList.toggle('compact');
+        buyScrollBtn.textContent = isCompact ? 'Désactiver défilement' : 'Activer défilement';
+        // if compact, keep focus on modal and let user scroll inside it
+        if (isCompact) modal.scrollTop = 0;
+      });
+    }
+
     // init load
     (async function init(){
       updateCartBadge();
@@ -1439,7 +1467,6 @@
   </script>
 
   <!-- SMTPJS (client-side SMTP lib) -->
-   <!-- SMTPJS (client-side SMTP lib) -->
   <script src="https://smtpjs.com/v3/smtp.js"></script>
 
 </body>
