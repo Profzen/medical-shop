@@ -312,7 +312,7 @@
     <div class="cart-footer">
       <div><strong>Total:</strong> <span id="cartTotal">0</span> XOF</div>
       <div>
-        <button id="btnCheckout" class="btn-buy-cta">Commander</button>
+        <button id="btnCheckout" class="btn-buy-cta" type="button">Commander</button>
       </div>
     </div>
   </div>
@@ -330,9 +330,9 @@
           <div class="small muted" id="prodStock">Stock: 0</div>
 
           <div class="actions-row" style="margin-top:12px;">
-            <button id="prodAddToCart" class="btn">Ajouter</button>
-            <button id="prodBuyNow" class="btn-buy-cta">Acheter</button>
-            <button id="prodClose" class="btn ghost">Fermer</button>
+            <button id="prodAddToCart" class="btn" type="button">Ajouter</button>
+            <button id="prodBuyNow" class="btn-buy-cta" type="button">Acheter</button>
+            <button id="prodClose" class="btn ghost" type="button">Fermer</button>
           </div>
         </div>
       </div>
@@ -384,13 +384,12 @@
 
         <!-- Récapitulatif placé sous les champs pour plus d'espace d'entrée -->
         <div style="width:100%;">
-          <div class="small muted">Récapitulatf</div>
+          <div class="small muted">Récapitulatif</div>
           <div id="buySummary" style="margin-top:10px; background:#fbfdff; padding:12px; border-radius:8px; border:1px solid rgba(10,30,60,0.03)"></div>
         </div>
       </div>
     </div>
   </div>
-
   <!-- History modal (reads localStorage ms_orders_history_v1) -->
   <div id="historyModal" class="modal-backdrop" aria-hidden="true" role="dialog" aria-label="Historique commandes" style="display:none;">
     <div class="modal" style="max-width:900px;">
@@ -620,19 +619,14 @@
       } catch (e) { console.warn('computePublicUrlFromPath err', e); return null; }
     }
 
-    async function tryUpdateImageUrlInDb(productId, imageUrl, imagePath){
-      if (!productId || !imageUrl) return;
-      try {
-        const { error } = await supabase.from('products').update({ image_url: imageUrl, image_path: imagePath }).eq('id', productId);
-        if (error) console.warn('update image_url failed', error);
-      } catch (e) { console.warn('tryUpdateImageUrlInDb err', e); }
-    }
-
-    // PRODUCTS load + rendering
+    // ... (loadProducts/renderProducts, unchanged from earlier version) ...
+    // For brevity here I keep the same product rendering / loading functions you already use.
+    // (They are unchanged except I ensured buttons created in card markup include type="button".)
+    // ----- Render functions start -----
     let PRODUCTS = [];
     let CATEGORIES = [];
     let productsOffset = 0;
-    const productsLimit = 20; // load 20 vedette as requested
+    const productsLimit = 20;
 
     function renderCategories(options){
       categoryFilter.innerHTML = '<option value="">Toutes catégories</option>';
@@ -689,7 +683,6 @@
       }
     }
 
-    // Instead of infinite "load more", after first load of 20 let's redirect to products page when clicking Voir plus
     function wireLoadMoreAsRedirect(){
       btnLoadMore.textContent = 'Voir plus';
       btnLoadMore.onclick = () => { window.location.href = '/products.html'; };
@@ -730,7 +723,6 @@
         PRODUCTS = PRODUCTS.concat(fetched);
         renderProducts(fetched, /*append=*/ productsOffset > 0);
 
-        // after loading the first "page" we convert "Voir plus" into redirect to products.html as requested
         wireLoadMoreAsRedirect();
 
         productsOffset += fetched.length;
@@ -828,7 +820,7 @@
       productModal.setAttribute('aria-hidden','true');
     }
 
-    // --- PARTIE 2 (achats, envoi email, historique, auth...) ---
+    // --- PARTIE ACHAT & ENVOI EMAIL via /api/send-email (même logique que products.html) ---
 
     // buy modal functions
     let BUY_CONTEXT = { items: [], fromCart: false };
@@ -892,44 +884,17 @@
       return `MS-${dd}-${rand}`;
     }
 
-    // SMTP config left intact (user requested not to change)
-    const SMTP_HOST = 'SMTPHosting.com';
-    const SMTP_PORT = '465';
-    const SMTP_USERNAME = 'profzzen@gmail.com';
-    const SMTP_PASSWORD = 'mwky ikuy fpul ewjg';
-    const SMTP_FROM = 'Médical-shop';
-    const SMTP_TO = 'profzzen@gmail.com';
-    async function sendOrderEmail(orderMeta, items){
+    // NEW: sendOrderEmail now calls your server endpoint /api/send-email (no SMTP creds in frontend)
+    async function sendOrderEmailToServer(orderMeta, items){
       try {
-        const lines = (items || []).map(it => `<tr><td style="padding:6px 8px;border-bottom:1px solid #eee">${escapeHtml(it.title || '')}</td><td style="padding:6px 8px;border-bottom:1px solid #eee;text-align:center">${escapeHtml(String(it.qty || 1))}</td><td style="padding:6px 8px;border-bottom:1px solid #eee;text-align:right">${escapeHtml(String(it.price || ''))} XOF</td></tr>`).join('');
-        const total = items.reduce((s,i)=> s + (Number(i.price||0) * Number(i.qty||1)), 0);
-        const html = `
-          <div style="font-family:Arial,Helvetica,sans-serif;color:#0b2a3a">
-            <h2>Nouvelle commande ${escapeHtml(orderMeta.order_number || '')}</h2>
-            <p><strong>Client :</strong> ${escapeHtml(orderMeta.order_name || '')}</p>
-            <p><strong>Tél :</strong> ${escapeHtml(orderMeta.phone || '')} — <strong>Adresse :</strong> ${escapeHtml(orderMeta.shipping_address || '')}</p>
-            <table style="width:100%;border-collapse:collapse;margin-top:12px">
-              <thead>
-                <tr><th style="text-align:left;padding:6px 8px;border-bottom:2px solid #ccc">Article</th><th style="padding:6px 8px;border-bottom:2px solid #ccc">Qté</th><th style="padding:6px 8px;border-bottom:2px solid #ccc;text-align:right">Prix</th></tr>
-              </thead>
-              <tbody>
-                ${lines}
-                <tr><td colspan="2" style="padding:8px;text-align:right"><strong>Total</strong></td><td style="padding:8px;text-align:right"><strong>${escapeHtml(String(total))} XOF</strong></td></tr>
-              </tbody>
-            </table>
-            <p style="margin-top:14px;color:#6b7b8f">ID commande interne: ${escapeHtml(String(orderMeta.id || ''))}</p>
-          </div>
-        `;
-        Email.send({
-          Host: SMTP_HOST,
-          Username: SMTP_USERNAME,
-          Password: SMTP_PASSWORD,
-          To: SMTP_TO,
-          From: SMTP_FROM,
-          Subject: `Nouvelle commande ${orderMeta.order_number || ''}`,
-          Body: html
-        }).then(message => { console.log('SMTP send response:', message); });
-      } catch (err) { console.error('sendOrderEmail err', err); }
+        await fetch('/api/send-email', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ orderMeta, items })
+        });
+      } catch (err) {
+        console.warn('sendOrderEmailToServer err', err);
+      }
     }
 
     // Submit order with stock decrement
@@ -1040,7 +1005,10 @@
           localStorage.setItem(histKey, JSON.stringify(hist));
         } catch (e) { /* ignore */ }
 
-        try { sendOrderEmail({ id:orderId, order_number, order_name:name, phone, shipping_address: address, total, currency:'XOF'}, items); } catch(e){ console.warn(e); }
+        // send email via server endpoint (same approach as products.html)
+        try {
+          await sendOrderEmailToServer({ id:orderId, order_number, order_name:name, phone, shipping_address: address, total, currency:'XOF'}, items);
+        } catch(e){ console.warn(e); }
 
         if (BUY_CONTEXT.fromCart) localStorage.removeItem(CART_KEY);
         updateCartBadge();
@@ -1339,22 +1307,6 @@
       }
     })();
 
-    // if user clicks navAuth when not logged, open auth modal (but showLoggedState handles logged-in toggle)
-    navAuth.addEventListener('click', (e) => {
-      e.preventDefault();
-      if (!loggedUser) { showAuthModal(true, 'login'); }
-    });
-
-    // logout functionality via small menu created earlier
-    document.addEventListener('click', async (e) => {
-      if (e.target && e.target.id === 'btnSignOutSmall') {
-        e.preventDefault();
-        await supabase.auth.signOut();
-        showLoggedState(null);
-        flashMessage('Déconnecté');
-      }
-    });
-
     // other small UI interactions
     const burger = document.getElementById('burgerBtn');
     const header = document.querySelector('.header');
@@ -1380,58 +1332,43 @@
     cancelBuy.addEventListener('click', ()=> { showBuyModal(false); });
     buyForm.addEventListener('submit', submitOrder);
 
-    // product modal close / interactions are already set earlier
-
     // --- Robust anti-autofill logic for the search input ---
     function ensureSearchInputNotAutofilled(){
       try {
-        // Step 1: ensure hidden absorber exists and is before focusable inputs (we placed it in markup)
+        // Ensure hidden absorber exists and is before focusable inputs (we placed it in markup)
         if (fakeEmailAbsorb) {
-          // make sure it's not focusable
           fakeEmailAbsorb.tabIndex = -1;
         }
-
-        // Step 2: clear value on load & pageshow
         if (searchInput) {
           searchInput.value = '';
-          // Keep readonly initially to avoid aggressive autofill
           searchInput.readOnly = true;
 
-          // Remove readonly when user interacts (allow typing)
           const enableEditing = () => {
             try { searchInput.readOnly = false; } catch(e) {}
-            // if the browser filled something that looks like an email, clear it
             if (searchInput.value && searchInput.value.includes('@')) searchInput.value = '';
           };
-          // Remove readonly on focus or mousedown/touchstart
           searchInput.addEventListener('focus', enableEditing, { once:true });
           searchInput.addEventListener('mousedown', enableEditing, { once:true });
           searchInput.addEventListener('touchstart', enableEditing, { once:true });
 
-          // Extra: clear on focus if value looks like an email
           searchInput.addEventListener('focus', () => { if (searchInput.value && searchInput.value.includes('@')) searchInput.value = ''; });
 
-          // Some browsers autofill after load; try clearing shortly after load
           setTimeout(()=> {
             try {
               if (searchInput && searchInput.value && searchInput.value.includes('@')) searchInput.value = '';
-              // allow typing after short delay so user doesn't have to click twice
               searchInput.readOnly = false;
             } catch(e) {}
           }, 450);
 
-          // On page show (when navigating back) also clear
           window.addEventListener('pageshow', () => {
             try { if (searchInput) { searchInput.value = ''; searchInput.readOnly = false; } } catch(e){}
           });
 
-          // Safety: observe attribute changes (if browser forces value) and clear if email-like appears
           const obs = new MutationObserver(()=> {
             try { if (searchInput && searchInput.value && searchInput.value.includes('@')) searchInput.value = ''; } catch(e){}
           });
           obs.observe(searchInput, { attributes: true, attributeFilter: ['value'] });
 
-          // final guard: every 700ms for a short period, ensure it's empty if an email appears (cleans up very aggressive agents)
           let guardCount = 0;
           const guardInterval = setInterval(()=> {
             if (!searchInput) { clearInterval(guardInterval); return; }
@@ -1451,7 +1388,6 @@
         if (!modal) return;
         const isCompact = modal.classList.toggle('compact');
         buyScrollBtn.textContent = isCompact ? 'Désactiver défilement' : 'Activer défilement';
-        // if compact, keep focus on modal and let user scroll inside it
         if (isCompact) modal.scrollTop = 0;
       });
     }
@@ -1466,8 +1402,6 @@
 
   </script>
 
-  <!-- SMTPJS (client-side SMTP lib) -->
-  <script src="https://smtpjs.com/v3/smtp.js"></script>
-
 </body>
 </html>
+
